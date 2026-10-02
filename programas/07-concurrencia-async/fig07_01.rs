@@ -5,7 +5,7 @@ struct Servicio {
     nombre: String,
 }
 
-type Estado = String;     // en el curso es el enum de la semana 3; aquí basta un texto
+type Estado = String;     // en el curso es el enum de la lección 3; aquí basta un texto
 
 fn revisar(s: &Servicio) -> Estado {
     format!("{}: OK", s.nombre)
