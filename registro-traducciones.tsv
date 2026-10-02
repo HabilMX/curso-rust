@@ -1,0 +1,11 @@
+# Estado de las traducciones. El ESPAÑOL es la fuente: todo se traduce desde ahí.
+#
+# La columna sha256 guarda la huella del archivo en español DEL QUE se tradujo.
+# Si el español cambia, su huella cambia y la traducción queda marcada como
+# vencida. Así la desincronización se detecta sola en vez de descubrirse meses
+# después leyendo una versión vieja.
+#
+# Se actualiza con:  ./registrar-traduccion.sh <archivo> <idioma>
+# Se comprueba con:  ./verificar-traducciones.sh
+#
+# archivo	idioma	sha256_del_español	fecha

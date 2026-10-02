@@ -1,0 +1,15 @@
+# Patrones que NO pueden salir a internet. Este material es PÚBLICO.
+# Una línea por patrón (regex extendida). Las líneas con # son comentarios.
+# El verificador falla si alguno aparece en un archivo .md.
+
+# --- rutas de máquinas reales ---
+/Users/[a-z]
+/home/dchavez
+
+# --- credenciales y tokens ---
+glpat-
+ghp_
+github_pat_
+xox[baprs]-
+AKIA[0-9A-Z]{16}
+-----BEGIN [A-Z ]*PRIVATE KEY-----
