@@ -1,6 +1,6 @@
 // fig04_03.rs
 fn leer_config(ruta: &str) -> Result<String, std::io::Error> {
-    let contenido = std::fs::read_to_string(ruta)?;   // 🔑 si falla, RETORNA el error
+    let contenido = std::fs::read_to_string(ruta)?;   // si falla, retorna el error
     Ok(contenido)
 }
 

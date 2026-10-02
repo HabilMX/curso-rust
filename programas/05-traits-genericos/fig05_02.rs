@@ -33,7 +33,7 @@ fn revisar_todos<R: Revisor>(r: &R, servicios: &[Servicio]) -> Vec<Estado> {
     servicios.iter().map(|s| r.revisar(s)).collect()
 }
 
-fn imprimir<T: std::fmt::Display + Clone>(x: T) { println!("{x}"); }      // varias restricciones
+fn imprimir<T: std::fmt::Display + Clone>(x: T) { println!("{x}"); }
 
 fn main() {
     let servicios = vec![

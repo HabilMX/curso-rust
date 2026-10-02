@@ -22,14 +22,14 @@ impl fmt::Display for Estado {
 trait Revisor {
     fn revisar(&self, s: &Servicio) -> Estado;
 
-    fn nombre(&self) -> String {          // 🔑 los traits pueden traer implementación por omisión
+    fn nombre(&self) -> String {
         "revisor".to_string()
     }
 }
 
 struct RevisorHttp { timeout_ms: u64 }
 
-impl Revisor for RevisorHttp {            // 🔴 aquí está la diferencia: es EXPLÍCITO
+impl Revisor for RevisorHttp {
     fn revisar(&self, s: &Servicio) -> Estado {
         Estado::Falla(format!("{}: sin red en este ejemplo (límite {} ms)", s.nombre, self.timeout_ms))
     }

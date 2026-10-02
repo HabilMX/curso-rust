@@ -1,5 +1,5 @@
 // fig04_02.rs
-fn saludar(n: &str) { println!("hola, {n}"); }         // ✅ acepta los dos: &String se convierte solo
+fn saludar(n: &str) { println!("hola, {n}"); }
 
 fn main() {
     let propio = String::from("catalogo");

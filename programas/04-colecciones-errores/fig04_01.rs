@@ -15,9 +15,9 @@ fn main() {
     let s = Servicio { nombre: "catalogo".to_string() };
     let mut v: Vec<Servicio> = Vec::new();
     v.push(s);
-    let primero = &v[0];                    // 🔴 si no existe: PANIC
+    let primero = &v[0];                    // si no existe: panic
     println!("{}", primero.nombre);
-    let primero = v.get(0);                 // devuelve Option<&Servicio> ← lo seguro
+    let primero = v.get(0);                 // devuelve Option<&Servicio>
     println!("{}", primero.is_some());
 
     let mut m: HashMap<String, Estado> = HashMap::new();

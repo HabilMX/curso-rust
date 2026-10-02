@@ -1,0 +1,2 @@
+{"servicio":"catalogo","codigo":200,"ms":7}
+{"servicio":"pagos","codigo":null,"ms":12,"error":"codigo 500"}

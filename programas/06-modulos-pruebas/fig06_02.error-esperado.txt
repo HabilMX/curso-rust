@@ -1,0 +1,15 @@
+error[E0603]: function `ruta_por_omision` is private
+ --> fig06_02.rs:9:28
+  |
+9 |     println!("{}", config::ruta_por_omision());
+  |                            ^^^^^^^^^^^^^^^^ private function
+  |
+note: the function `ruta_por_omision` is defined here
+ --> fig06_02.rs:3:5
+  |
+3 |     fn ruta_por_omision() -> &'static str {
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0603`.

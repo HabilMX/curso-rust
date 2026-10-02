@@ -27,7 +27,13 @@ jobs:
           herramientas/verificar-programas.sh --probar
           herramientas/verificar-extractos.sh --probar
 
-      - name: Compilar y ejecutar los programas de las lecciones 0 a 7
+      - name: La profundidad se mide (piso de 3,000 palabras por lección, mediana de 4,000)
+        run: herramientas/medir-profundidad.sh
+
+      - name: Cada lección cumple la plantilla de 8 partes
+        run: herramientas/verificar-plantilla.sh
+
+      - name: Compilar y ejecutar los programas de las lecciones 0 a 8
         run: herramientas/verificar-programas.sh
 
       - name: Comparar los extractos con el código real y revisar que cada bloque esté declarado
