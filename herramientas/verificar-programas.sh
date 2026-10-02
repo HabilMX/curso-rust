@@ -19,9 +19,11 @@
 #   - programa que corre: su salida estándar, línea por línea. Se compila con
 #     -D warnings: un aviso del compilador es un fallo, porque quien ejecuta el
 #     programa lo vería en su terminal y la lección no lo mostraría.
-#   - programa que NO compila: que de verdad falle, y que los CÓDIGOS de error
-#     (E0384, E0382…) sean los documentados. El texto completo del mensaje cambia
-#     de una versión de Rust a otra; el código del error, no.
+#   - programa que NO compila: que de verdad falle, y que el error documentado sea
+#     el real COMPLETO (código EXXXX, ubicación, mensaje y notas): un texto
+#     documentado distinto del que imprime rustc es un defecto. Solo se normaliza
+#     lo que depende de la máquina o de la versión: la ruta /rustc/<hash>/ de la
+#     biblioteca estándar y los espacios finales.
 #
 # Uso:  herramientas/verificar-programas.sh [idioma]      (por omisión: es)
 #       herramientas/verificar-programas.sh es --mostrar  (imprime la salida real de cada uno)
@@ -52,6 +54,8 @@ defectos = {
         lambda t: t.replace("    x = 6;\n    println!(\"{x}\");", "    println!(\"{x}\");", 1),
     "salida documentada borrada":
         lambda t: re.sub(r"(\$ rustc --edition 2024 fig00_01\.rs && \./fig00_01\n)[^\n]*\n", r"\1", t, count=1),
+    "texto del error documentado cambiado (mismo código)":
+        lambda t: t.replace("cannot assign twice to immutable variable", "no se puede asignar dos veces", 1),
     "programa que ya no compila":
         lambda t: t.replace('// fig00_01.rs\nfn main() {', '// fig00_01.rs\nfn main( {', 1),
     "comando documentado distinto":
@@ -105,6 +109,12 @@ def normalizar(texto):
 
 def codigos(texto):
     return re.findall(r"^error\[(E\d{4})\]", texto, re.M)
+
+def normalizar_error(texto):
+    """El error de rustc listo para comparar: sin la ruta /rustc/<hash>/ (cambia en
+    cada versión) y sin espacios finales. Todo lo demás se compara tal cual."""
+    texto = re.sub(r"/rustc/[0-9a-f]{7,40}/", "/rustc/<hash>/", texto)
+    return normalizar(texto)
 
 # --- 1. extraer los programas de las lecciones ---------------------------------
 programas = []   # (figura, leccion, codigo, comando, salida)
@@ -180,10 +190,18 @@ try:
             if r.returncode == 0:
                 print(f"{etiqueta} 🔴 DEBÍA NO COMPILAR y compiló"); malos += 1; continue
             real, ref = codigos(r.stderr), codigos(esperado)
-            if real == ref:
-                print(f"{etiqueta} ✅ no compila, como documenta ({', '.join(ref)})"); ok += 1
-            else:
+            if real != ref:
                 print(f"{etiqueta} 🔴 códigos de error distintos: documentados {ref}, reales {real}"); malos += 1
+            else:
+                a, b = normalizar_error(esperado), normalizar_error(r.stderr)
+                if a == b:
+                    print(f"{etiqueta} ✅ no compila, como documenta ({', '.join(ref)})"); ok += 1
+                else:
+                    print(f"{etiqueta} 🔴 el TEXTO del error no coincide ({', '.join(ref)})")
+                    import difflib
+                    for l in list(difflib.unified_diff(a.split("\n"), b.split("\n"), "documentado", "real", lineterm="", n=0))[:14]:
+                        print("        " + l)
+                    malos += 1
             if modo == "--mostrar": print(r.stderr)
             continue
 

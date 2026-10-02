@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Comprueba que cada lección cumpla la plantilla de 8 partes del README y las
 # reglas de forma: título «Lección N — …» con el número de su archivo, sin
-# emojis en los títulos, sin marcas PENDIENTE, sin mencionar IA, con las
+# emojis en los títulos, sin marcas PENDIENTE, sin mencionar asistentes automáticos ni sus empresas,
+# sin llamar «semana N» a una lección (el curso numera por lección), con las
 # secciones en orden, y con el número de objetivos, ejercicios y fuentes pedido.
+# Los README (el de la raíz y es/README.md) y es/bitacora.md pasan también por las
+# reglas de asistentes y de marcas pendientes; el README y es/README.md, además, por la de «semana N».
 #
 # Uso:  herramientas/verificar-plantilla.sh [carpeta]     (por omisión: es)
 # Sale 0 si todas cumplen, 1 si alguna no, 2 si no pudo medir.
@@ -18,7 +21,27 @@ SECCIONES = ["Al terminar vas a poder", "El porqué antes del cómo", "Los conce
              "El error que vas a ver", "Lo que se hace mal", "Ejercicios", "Soluciones",
              "Cómo sé que lo logré", "Para leer más"]
 EMOJI = re.compile("[\U0001F000-\U0001FAFF☀-➿⬀-⯿️‍]")
-IA = re.compile(r"\bIA\b|inteligencia artificial|Codex|Claude|ChatGPT|OpenAI|Anthropic")
+# Los patrones de asistentes automáticos y sus empresas se LEEN de .publicable-prohibido.txt
+# (su último bloque), para que haya una sola lista y las dos puertas no se
+# desincronicen. Si el bloque falta o queda vacío, el guion falla cerrado.
+def patrones_ia():
+    lista = os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), ".publicable-prohibido.txt")
+    if not os.path.isfile(lista):
+        lista = ".publicable-prohibido.txt"
+    pats, activo = [], False
+    for l in open(lista, encoding="utf8").read().split("\n"):
+        if l.startswith("# --- el curso no habla"):
+            activo = True; continue
+        if activo and l.strip() and not l.startswith("#"):
+            pats.append(l.strip())
+    if not pats:
+        print("el bloque de asistentes de .publicable-prohibido.txt falta o está vacío"); sys.exit(2)
+    return re.compile("|".join(f"(?:{p})" for p in pats))
+ASISTENTES = patrones_ia()
+# «semana 3» como referencia a una lección: el curso numera por lección. Se busca
+# en TODO el texto, también dentro de los bloques de código (un comentario de un
+# programa dice «el enum de la semana 3» igual de mal).
+SEMANA = re.compile(r"\b[Ss]emanas? [0-9]")
 PEND = re.compile(r"PENDIENTE|ESQUELETO|TODO:|FIXME")
 
 archivos = sorted(f for f in glob.glob(os.path.join(sys.argv[1], "*.md")) if os.path.basename(f)[:1].isdigit())
@@ -57,8 +80,10 @@ for f in archivos:
             prob.append(f"emoji en un título: {l[:60]!r}")
     txt = "\n".join(lineas)
     if PEND.search(txt): prob.append("quedan marcas PENDIENTE/ESQUELETO/TODO")
-    ia = IA.search(txt)
-    if ia: prob.append(f"menciona IA: {ia.group(0)!r}")
+    ia = ASISTENTES.search(txt)
+    if ia: prob.append(f"menciona un asistente o su empresa: {ia.group(0)!r}")
+    sm = SEMANA.search(txt)
+    if sm: prob.append(f"llama «{sm.group(0)}» a una lección: el curso numera por lección")
     if sum(1 for l in lineas if l.strip().startswith("```")) % 2: prob.append("vallas de código desbalanceadas")
     if not re.search(r"^\*\*Tiempo:?\*\*", txt, re.M): prob.append("falta «**Tiempo:**»")
     sec = secciones(lineas)
@@ -80,6 +105,30 @@ for f in archivos:
     print(f"  {nombre:<40}{'ok' if not prob else 'FALLA'}")
     for p in prob: print(f"      - {p}")
     malas += bool(prob)
+# README y bitácora: no son lecciones (sin plantilla de 8 partes ni título «Lección N»),
+# pero sí texto público: asistentes y marcas pendientes en los tres; «semana N» solo
+# en los README (la bitácora ES un diario semanal y sus títulos «Semana N» son su forma).
+extras = [(os.path.join(sys.argv[1], "README.md"), True),
+          (os.path.join(sys.argv[1], "bitacora.md"), False)]
+if os.path.isfile("README.md"):
+    extras.insert(0, ("README.md", True))
+encontrados = 0
+for f, con_semana in extras:
+    if not os.path.isfile(f):
+        continue
+    encontrados += 1
+    txt = open(f, encoding="utf8").read()
+    prob = []
+    if PEND.search(txt): prob.append("quedan marcas PENDIENTE/ESQUELETO/TODO")
+    ia = ASISTENTES.search(txt)
+    if ia: prob.append(f"menciona un asistente o su empresa: {ia.group(0)!r}")
+    sm = SEMANA.search(txt) if con_semana else None
+    if sm: prob.append(f"llama «{sm.group(0)}» a una lección: el curso numera por lección")
+    print(f"  {f:<40}{'ok' if not prob else 'FALLA'}")
+    for p in prob: print(f"      - {p}")
+    malas += bool(prob)
+if not encontrados:
+    print("no se encontró ningún README ni bitácora que revisar"); sys.exit(2)
 print()
 if malas:
     print(f"  {malas} lección(es) no cumplen la plantilla."); sys.exit(1)

@@ -1,6 +1,6 @@
 # Patrones que NO pueden salir a internet. Este material es PÚBLICO.
 # Una línea por patrón (regex extendida). Las líneas con # son comentarios.
-# El verificador falla si alguno aparece en un archivo .md.
+# El verificador falla si alguno aparece en cualquier archivo de texto.
 
 # --- rutas de máquinas reales ---
 /Users/[a-z]
@@ -13,3 +13,17 @@ github_pat_
 xox[baprs]-
 AKIA[0-9A-Z]{16}
 -----BEGIN [A-Z ]*PRIVATE KEY-----
+
+# --- el curso no habla de asistentes ni de empresas de IA ---
+# (verificar-plantilla.sh lee TAMBIÉN este bloque: va hasta el final del archivo.
+#  Mayúsculas y minúsculas se escriben tal cual; «Cursor» y «Llama» solo en su
+#  contexto, porque en español son palabras comunes.)
+\bIA\b
+[Ii]nteligencia artificial
+[Cc]odex|[Cc]laude|ChatGPT|OpenAI|Anthropic|Copilot|Gemini|DeepSeek|Mistral|Perplexity
+\bLLMs?\b
+\bGPT-?[0-9o]|\bGPT\b
+[Mm]odelos? de lenguaje|[Gg]randes modelos
+[Aa]prendizaje autom[aá]tico|[Mm]achine learning
+[Aa]sistente de c[oó]digo|[Vv]ibe cod
+Cursor (IDE|AI|editor)|Llama[- ][0-9]|Meta AI|\bGrok\b
