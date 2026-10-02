@@ -2,7 +2,7 @@
 
 **Por Dorian Chávez, fundador de Hábil y arquitecto de integración.**
 
-**Para quién es:** alguien que ya terminó el **curso de Go** (`hb-curso-go`) y quiere entender el otro
+**Para quién es:** alguien que ya terminó el **[curso de Go](https://github.com/HabilMX/curso-go)** y quiere entender el otro
 extremo del espectro. No se aprende Rust *en vez de* Go: se aprende **después**, y con eso se entiende
 qué decisión tomó cada uno.
 
@@ -25,15 +25,15 @@ El `revisor` otra vez: recibe una lista de servicios, los consulta **todos a la 
 pelearte con el mismo problema en los dos lenguajes sí. Y vas a descubrir que lo que en Go te tomó una
 tarde, en Rust te toma tres — hasta que entiendes *por qué*, y entonces entiendes las dos cosas.
 
-## 🔴 Lo que nadie te dice y define este curso
+## Lo que nadie te dice y define este curso
 
 **Rust tiene una curva distinta, no más larga: distinta.** La sintaxis es fácil. Lo que cuesta es **el
-`borrow checker`**, el componente del compilador que verifica quién es dueño de cada dato. Los datos
-medidos por quienes enseñan Rust:
+`borrow checker`**, el componente del compilador que verifica quién es dueño de cada dato. Lo que
+suele contar quien enseña y quien aprende Rust, como orden de magnitud y sin pretender que sea una medición:
 
-- **El borrow checker se vuelve intuitivo a las 2-3 semanas.** No antes. No es que seas lento: es que
+- **El borrow checker suele volverse intuitivo después de varias semanas de práctica.** No antes. No es que seas lento: es que
   ese modelo mental se construye chocando.
-- La mayoría dedica **4 a 8 semanas** a las bases antes de su primer proyecto real.
+- Muchas personas dedican **varias semanas** a las bases antes de su primer proyecto real.
 - **El compilador de Rust es el mejor profesor que existe.** Sus errores explican el problema, señalan la
   línea y **sugieren el arreglo**. En Rust se aprende leyendo errores, no evitándolos.
 
@@ -66,8 +66,8 @@ lo saltas, las seis semanas siguientes son memorizar reglas sin sentido.
 ## Las tres fuentes, y cómo combinarlas
 
 1. **[The Book](https://doc.rust-lang.org/book/)** — oficial, 21 capítulos. Lo tienes **offline**:
-   `rustup doc --book`. Para este curso: **capítulos 1-12 y 16-17**.
-2. **[Rustlings](https://rustlings.rust-lang.org/)** — **96 ejercicios interactivos**, muchos dirigidos
+   `rustup doc --book`. Para este curso: **capítulos 1-12, 14 y 16-17**.
+2. **[Rustlings](https://rustlings.rust-lang.org/)** — **95 ejercicios interactivos**, muchos dirigidos
    específicamente al borrow checker. `cargo install rustlings`. **El orden importa: capítulo, luego sus
    ejercicios.**
 3. **[Rust by Example](https://doc.rust-lang.org/rust-by-example/)** — como referencia rápida.

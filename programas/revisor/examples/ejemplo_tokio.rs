@@ -12,7 +12,7 @@ async fn revisar(nombre: &str, espera_ms: u64) -> String {
 
 #[tokio::main]
 async fn main() {
-    let servicios = [("catalogo", 300), ("pagos", 100), ("usuarios", 200)];
+    let servicios = [("catalogo", 600), ("pagos", 200), ("usuarios", 400)];
     let inicio = Instant::now();
 
     let futuros = servicios.iter().map(|(nombre, ms)| revisar(nombre, *ms));
@@ -22,7 +22,7 @@ async fn main() {
     for resultado in &resultados {
         println!("{resultado}");
     }
-    // Esperarlos uno tras otro habría tardado 600 ms; a la vez tardan lo del más lento.
-    let a_la_vez = inicio.elapsed() < Duration::from_millis(550);
+    // Esperarlos uno tras otro habría tardado 1200 ms; a la vez tardan lo del más lento.
+    let a_la_vez = inicio.elapsed() < Duration::from_millis(1100);
     println!("tardó menos que la suma de las esperas: {a_la_vez}");
 }

@@ -1,6 +1,6 @@
 # Lección 4 — Colecciones y errores
 
-**Tiempo:** 2 × 45 min
+**Tiempo:** 2 × 45 min.
 
 **Qué construyes:** la lista de servicios y el reporte, con errores de verdad
 
@@ -34,7 +34,7 @@ Esta lección no busca que uses `unwrap()` para hacer que el compilador se calle
 
 ## Los conceptos
 
-### `Vec<T>`: una lista dueña de valores del mismo tipo
+### `Vec<T>`: una lista dueño de valores del mismo tipo
 
 `Vec<T>` es el vector de Rust: una colección de tamaño variable que posee sus elementos. El parámetro `T` dice qué tipo de valores puede guardar. Un `Vec<Servicio>` solo guarda servicios; un `Vec<Estado>` solo guarda estados. Esta restricción no es una incomodidad accidental. Le permite al compilador saber cómo debe administrar cada elemento, qué métodos son válidos y qué operaciones podrían mover o prestar valores.
 
@@ -139,7 +139,7 @@ El lifetime `'a` aparecerá a fondo en la lección 5. Por ahora basta leerlo com
 
 ### `String` y `&str`: poseer texto contra leer una vista
 
-Rust distingue el texto que posee datos del texto que solo presta una vista. `String` es una cadena UTF-8, mutable y con tamaño variable; normalmente vive en el heap y es dueña de sus bytes. `&str` es una referencia a una secuencia UTF-8 que ya existe en otro lugar. Un literal como `"catalogo"` tiene tipo `&'static str`: es una vista de texto almacenado dentro del binario y disponible durante toda la ejecución.
+Rust distingue el texto que posee datos del texto que solo presta una vista. `String` es una cadena UTF-8, mutable y con tamaño variable; normalmente vive en el heap y es dueño de sus bytes. `&str` es una referencia a una secuencia UTF-8 que ya existe en otro lugar. Un literal como `"catalogo"` tiene tipo `&'static str`: es una vista de texto almacenado dentro del binario y disponible durante toda la ejecución.
 
 La regla práctica es sencilla: recibe `&str`, guarda `String`. Una función que solo va a leer un nombre no necesita recibir la propiedad ni obligar a la persona que llama a crear una copia. Un struct que debe conservar el nombre después de que termine la llamada sí necesita ser dueño de un `String`. Esta regla no es absoluta, pero evita dos errores comunes: aceptar `String` por reflejo y terminar moviendo valores innecesariamente, o intentar guardar una referencia a texto cuyo dueño desaparecerá.
 
@@ -303,7 +303,7 @@ La biblioteca estándar basta para muchos programas pequeños: puedes devolver `
 
 No significa que `anyhow` sea una licencia para borrar significado. Si una función devuelve un estado que otra parte del programa debe distinguir para tomar decisiones, un enum propio puede ser mejor. Por ejemplo, una biblioteca que necesite permitir que quien llama diferencie `NombreRepetido`, `UrlSinEsquema` y `TimeoutCero` no debe entregar solamente una cadena. Debe publicar un tipo de error con variantes que representen esas causas.
 
-`thiserror` ayuda a declarar ese tipo de error propio sin escribir manualmente implementaciones repetitivas de `Display`, `Error` y conversiones desde errores internos. Se usa sobre todo en bibliotecas, donde el tipo de error forma parte de la API pública. El `Cargo.lock` del proyecto contiene `thiserror`, pero el `Cargo.toml` del revisor no lo declara como dependencia directa y su código actual no expone un enum de errores propio. No afirmes que el revisor usa `thiserror` mientras no sea verdad.
+`thiserror` ayuda a declarar ese tipo de error propio sin escribir manualmente implementaciones repetitivas de `Display`, `Error` y conversiones desde errores internos. Se usa sobre todo en bibliotecas, donde el tipo de error forma parte de la API pública. El `Cargo.lock` del proyecto contiene `thiserror`, pero el `Cargo.toml` del revisor no lo declara como dependencia directa y su código actual no expone un enum de errores propio. Por eso el `revisor` no lo usa: sus errores son mensajes de texto que `anyhow` acompaña con contexto.
 
 <!-- verificar:fragmento -->
 ```rust
@@ -326,7 +326,7 @@ La frontera práctica es ésta: `anyhow` para ejecutar una aplicación y explica
 
 ### E0277: usar `?` en una función que no puede devolver un error
 
-El error más frecuente al empezar a usar `?` aparece cuando la función declara un retorno simple, como `String`, pero dentro intenta propagar un `Result`. Rust no puede inventar dónde guardar el error ni cómo comunicarlo a quien llamó. La siguiente corrida real de `rustc 1.98.1` usa entrada estándar, por eso el compilador nombra el archivo como `<anon>`.
+El error más frecuente al empezar a usar `?` aparece cuando la función declara un retorno simple, como `String`, pero dentro intenta propagar un `Result`. Rust no puede inventar dónde guardar el error ni cómo comunicarlo a quien llamó. La siguiente corrida real, con `rustc 1.98.1`, lee el programa desde la entrada estándar, por eso el compilador nombra el archivo como `<anon>`; con un archivo en disco verás su nombre en lugar de `<anon>`.
 
 <!-- verificar:fragmento -->
 ```rust

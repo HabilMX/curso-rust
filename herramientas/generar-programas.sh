@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Arma las carpetas de programas/ que salen de las lecciones 0 a 7: cada programa
+# Arma las carpetas de programas/ que salen de las lecciones 0 a 8: cada programa
 # completo como archivo que se puede compilar, con su salida documentada al lado.
 #
 # Las lecciones son la fuente. Esas carpetas son una copia derivada: no se

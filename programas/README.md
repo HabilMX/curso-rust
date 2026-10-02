@@ -7,7 +7,7 @@ Aquí está cada programa del curso, por lección, listo para abrir y ejecutar.
   corregirlo.
 
 Para ejecutar uno, entra a la carpeta de su lección y corre el comando que está en la lección, justo debajo del
-código (por ejemplo `rustc --edition 2024 fig02_04.rs && ./fig02_04`).
+código (por ejemplo `rustc --edition 2024 fig02_03.rs && ./fig02_03`).
 
 `revisor/` es el proyecto completo que se construye en las lecciones 4 a 8, con sus pruebas (`cargo test`).
 En `revisor/examples/` están los ejemplos que usan crates externos (`tokio`, `reqwest`, `serde`, `clap`); se ejecutan

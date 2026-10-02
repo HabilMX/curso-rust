@@ -1,6 +1,6 @@
 # Lección 3 — Structs, enums y match
 
-**Tiempo:** 2 × 45 min
+**Tiempo:** 2 × 45 min.
 
 **Qué construyes:** el modelo del `revisor`: `Servicio` y `Estado`
 
@@ -190,7 +190,7 @@ sin revisar
 
 La anotación `#[allow(dead_code)]` pertenece al ejemplo, no es una receta para ocultar avisos en proyectos reales. La variante `Lento` conserva `codigo` porque una respuesta lenta puede haber sido HTTP 200, aunque este programa solo usa `ms`. Sin la anotación, Rust advertiría que el campo `codigo` de esa variante no se lee en este archivo. El proyecto real sí utiliza los datos donde corresponden y se compila con avisos tratados como errores.
 
-El `revisor` mejora el fragmento inicial con dos decisiones de dominio. Primero, una falla lleva tanto `motivo` como `ms`, porque saber que una conexión agotó el tiempo después de cierta duración es información útil para el reporte. Segundo, las variantes reciben `derive(Debug, Clone, PartialEq)`. `PartialEq` permite comparar estados en pruebas con `assert_eq!`, algo que usarás en la lección 6.
+El `revisor` mejora el fragmento inicial con dos decisiones de dominio. Primero, una falla lleva tanto `motivo` como `ms`, porque saber que una conexión agotó el tiempo después de cierta duración es información útil para el reporte. Segundo, el enum recibe `derive(Debug, Clone, PartialEq)`. `PartialEq` permite comparar estados en pruebas con `assert_eq!`, algo que usarás en la lección 6.
 
 <!-- verificar:extracto:src/modelo.rs -->
 ```rust
@@ -350,7 +350,7 @@ El primer consumo usa `match` porque los dos casos importan: hay una salida para
 
 `unwrap_or(0)` devuelve el contenido cuando existe y el valor por omisión cuando no. La decisión de usar `0` solo es correcta si el llamador entiende que cero representa “sin respuesta” en ese contexto. En un reporte HTTP público, puede ser más claro conservar `Option<u16>` hasta el punto donde se presenta el dato, para no confundir una ausencia con un código HTTP real.
 
-No confundas `unwrap_or` con `unwrap`. `unwrap()` dice: “sé que aquí hay un valor; si no lo hay, termina el programa con un `panic!`”. Puede ser razonable en una prueba donde la ausencia demuestra que falló la preparación del caso, pero en código de aplicación suele ocultar una decisión pendiente. `clippy` suele señalar usos cuestionables de `unwrap`; la lección 6 mostrará cómo ejecutar esas comprobaciones. Antes de escribirlo, pregúntate si `None` puede ocurrir en producción. Si puede, necesitas manejarlo.
+No confundas `unwrap_or` con `unwrap`. `unwrap()` dice: “sé que aquí hay un valor; si no lo hay, termina el programa con un `panic!`”. Puede ser razonable en una prueba donde la ausencia demuestra que falló la preparación del caso, pero en código de aplicación suele ocultar una decisión pendiente. `clippy`, con su configuración por omisión, no avisa de un `unwrap` común; existe un aviso opcional (`clippy::unwrap_used`) que quien mantiene un proyecto puede activar para prohibirlo. La lección 6 mostrará cómo ejecutar `clippy`. Antes de escribirlo, pregúntate si `None` puede ocurrir en producción. Si puede, necesitas manejarlo.
 
 El proyecto usa `Option` para la forma JSON del reporte. Una falla no tiene un código HTTP inventado, por eso `codigo` es `Option<u16>`. El campo `error` también es opcional: aparece en una falla o en un servicio no intentado, pero se omite para una respuesta sana. Este struct representa una salida serializable, no reemplaza el enum interno `Estado`; ambos tipos tienen responsabilidades distintas.
 

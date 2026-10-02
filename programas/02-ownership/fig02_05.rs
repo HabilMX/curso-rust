@@ -1,8 +1,10 @@
 // fig02_05.rs
+fn primera_palabra(s: &str) -> &str {
+    s.split_whitespace().next().unwrap_or("")
+}
+
 fn main() {
-    let mut s = String::from("hola");
-    let r1 = &s;                  // lectura, ok
-    let r2 = &s;                  // otra lectura, ok
-    let r3 = &mut s;              // ← error: ya hay lecturas vivas
-    println!("{r1} {r2} {r3}");
+    let texto = String::from("revisor listo");
+    let palabra = primera_palabra(&texto);
+    println!("primera: {palabra}");
 }

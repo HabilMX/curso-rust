@@ -1,5 +1,5 @@
 error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
- --> fig02_05.rs:6:14
+ --> fig02_07.rs:6:14
   |
 4 |     let r1 = &s;                  // lectura, ok
   |              -- immutable borrow occurs here

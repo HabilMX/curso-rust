@@ -1,5 +1,5 @@
 error[E0308]: mismatched types
- --> fig01_05.rs:2:21
+ --> fig01_06.rs:2:21
   |
 2 | fn doble(x: i32) -> i32 {
   |    -----            ^^^ expected `i32`, found `()`

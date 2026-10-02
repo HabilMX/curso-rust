@@ -28,7 +28,7 @@ Numeración única y continua: «Lección N», de la 0 a la 8. Cada una se apoya
 | 5 | Traits, genéricos y lifetimes | el trait `Revisor` y una función genérica, en programas aparte del `revisor` real | traits y métodos por omisión, genéricos con restricciones, lifetimes y el `'a` que asusta |
 | 6 | Módulos, pruebas y `cargo` | el proyecto `revisor` ordenado y con pruebas | módulos y visibilidad, pruebas unitarias y de integración, `cargo test`, dependencias y versiones |
 | 7 | Concurrencia y async | el `revisor` concurrente: que revise todo a la vez | hilos del sistema, `Arc` y `Mutex`, canales, `async/await` con `tokio`, la comparación honesta con las gorrutinas de Go |
-| 8 | El programa terminado | el `revisor` completo, en un binario | `reqwest`, `serde`, `clap`, el perfil de release, el binario final y su comparación con el de Go |
+| 8 | El programa terminado | el `revisor` completo, en un binario | `reqwest`, `serde`, `clap`, el perfil de release, el binario final y cómo compararlo con el de Go |
 
 Lo que la tabla promete por lección es lo que la lección trae.
 
@@ -59,12 +59,12 @@ En tu computadora, con [Rust](https://rustup.rs/) instalado (la lección 0 lo in
 
 ```bash
 cd programas/02-ownership
-rustc --edition 2024 fig02_04.rs && ./fig02_04      # compara lo que imprime con fig02_04.salida.txt
+rustc --edition 2024 fig02_03.rs && ./fig02_03      # compara lo que imprime con fig02_03.salida.txt
 ```
 
-Cada programa de las lecciones 0 a 7 es un archivo `figNN_NN.rs` dentro de la carpeta de su lección, con su
+Cada programa de las lecciones 0 a 8 es un archivo `figNN_NN.rs` dentro de la carpeta de su lección, con su
 salida esperada al lado (`figNN_NN.salida.txt`). Los que **no compilan a propósito**, porque la lección enseña
-justo ese error, traen `figNN_NN.error-esperado.txt` (el mensaje del compilador) en lugar de la salida. Uno es de pruebas (`fig06_01.rs`) y se
+justo ese error, traen `figNN_NN.error-esperado.txt` (el mensaje del compilador) en lugar de la salida. Uno es de pruebas (`fig06_03.rs`) y se
 compila con `--test`. El comando exacto de cada uno está en su lección, justo debajo del código.
 
 El proyecto completo que se construye en las lecciones 4 a 8 es [`programas/revisor/`](programas/revisor/), con
@@ -77,7 +77,7 @@ cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 ```
 
-**Las lecciones son la fuente; `programas/` es una copia que se genera de ellas.** Los programas de las lecciones 0 a 7
+**Las lecciones son la fuente; `programas/` es una copia que se genera de ellas.** Los programas de las lecciones 0 a 8
 se extraen de los bloques de código de `es/*.md` con `herramientas/generar-programas.sh`, y en cada cambio la
 verificación comprueba que la copia es idéntica a lo que dicen las lecciones. Así lo que lees y lo que ejecutas
 no pueden diferir.
@@ -88,7 +88,7 @@ no pueden diferir.
 |---|---|
 | `es/` | el curso en español, una lección por archivo |
 | `en/`, `fr/`, `pt/`, `bg/` | **futuras:** las traducciones todavía no existen |
-| `programas/` | los programas de las lecciones 0 a 7 (uno por archivo, con su salida esperada) y `revisor/`, el proyecto real de las lecciones 4 y 8 |
+| `programas/` | los programas de las lecciones 0 a 8 (uno por archivo, con su salida esperada) y `revisor/`, el proyecto real de las lecciones 4 y 8 |
 | `herramientas/` | los scripts que verifican el curso (ver abajo) |
 | `.github/workflows/verificar.yml` | la verificación automática que muestra el sello |
 | `verificar-publicable.sh` | revisa que el material no contenga rutas internas ni claves antes de publicarlo |

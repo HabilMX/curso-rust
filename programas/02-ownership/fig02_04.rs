@@ -1,8 +1,10 @@
 // fig02_04.rs
-fn largo(s: &String) -> usize { s.len() }      // presta, no toma posesión
+fn agregar_puerto(etiqueta: &mut String) {
+    etiqueta.push_str(":443");
+}
 
 fn main() {
-    let s = String::from("hola");
-    let n = largo(&s);
-    println!("{s} mide {n}");                   // sigue siendo mía ✓
+    let mut servicio = String::from("catalogo");
+    agregar_puerto(&mut servicio);
+    println!("{servicio}");
 }

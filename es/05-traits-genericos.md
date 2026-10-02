@@ -29,7 +29,7 @@ Los traits no reemplazan a los structs ni a los enums. Cada herramienta responde
 
 Los genéricos hacen posible escribir una función que trabaja con una familia de tipos sin perder información sobre cuál tipo concreto recibió. La función `revisar_todos` de esta lección puede aceptar cualquier `R` que implemente `Revisor`. No necesita un `if` por cada implementación ni convertir todo a texto. El compilador conoce el tipo concreto de `R` al compilar cada llamada y puede verificar que existe el método correcto.
 
-Los lifetimes completan este modelo cuando trabajas con referencias. Ownership ya estableció que cada valor tiene una dueña y que una referencia es un préstamo. Un lifetime no crea otra forma de propiedad ni prolonga un valor. Es una anotación que ayuda al compilador a demostrar que un préstamo seguirá siendo válido durante todo uso posible. Aparece sobre todo cuando una función recibe referencias y devuelve una referencia, o cuando un struct guarda referencias.
+Los lifetimes completan este modelo cuando trabajas con referencias. Ownership ya estableció que cada valor tiene un dueño y que una referencia es un préstamo. Un lifetime no crea otra forma de propiedad ni prolonga un valor. Es una anotación que ayuda al compilador a demostrar que un préstamo seguirá siendo válido durante todo uso posible. Aparece sobre todo cuando una función recibe referencias y devuelve una referencia, o cuando un struct guarda referencias.
 
 La notación `'a` intimida porque parece una variable misteriosa, pero se lee mejor como una etiqueta. Si una función recibe dos referencias marcadas con `'a` y devuelve otra marcada con `'a`, está declarando: “la referencia de salida depende de estas entradas y no puede usarse después de que deje de ser válida la referencia más corta”. No dice cuánto dura `'a`; eso depende de cada llamada. Tampoco reserva memoria ni hace recolección de basura.
 
@@ -381,7 +381,7 @@ La pregunta útil no es “¿traits o genéricos?”. Un trait describe una capa
 
 Si una referencia no vive lo suficiente, copiar un `String` con `.clone()` puede hacer que el programa compile, pero no siempre resuelve el diseño correcto. A veces solo oculta que una función debería devolver una referencia, que un tipo debería poseer sus datos o que un préstamo dura más de lo necesario.
 
-Haz primero el diagnóstico: identifica la dueña, identifica quién necesita usar el dato después y decide si necesita una vista o una copia independiente. Clona cuando dos dueños legítimos necesitan conservar valores separados. El vector de filas del `revisor` no clona servicios ni estados porque solo necesita ordenarlos mientras sus dueños siguen vivos.
+Haz primero el diagnóstico: identifica el dueño, identifica quién necesita usar el dato después y decide si necesita una vista o una copia independiente. Clona cuando dos dueños legítimos necesitan conservar valores separados. El vector de filas del `revisor` no clona servicios ni estados porque solo necesita ordenarlos mientras sus dueños siguen vivos.
 
 ### Leer `'a` como una duración concreta
 
@@ -476,7 +476,7 @@ fn primero<'a>(texto: &'a str) -> &'a str {
 }
 ```
 
-`primero` no crea el texto ni intenta prestarlo después de destruirlo. Solo devuelve el mismo préstamo que recibió. En cambio, `devolver` crea un `String` local, es su dueña y lo destruye al salir; por eso la referencia de la figura 5.4 no puede escapar.
+`primero` no crea el texto ni intenta prestarlo después de destruirlo. Solo devuelve el mismo préstamo que recibió. En cambio, `devolver` crea un `String` local, es su dueño y lo destruye al salir; por eso la referencia de la figura 5.4 no puede escapar.
 
 ## Cómo sé que lo logré
 

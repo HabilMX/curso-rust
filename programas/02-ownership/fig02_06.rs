@@ -1,10 +1,6 @@
 // fig02_06.rs
-fn agregar_puerto(etiqueta: &mut String) {
-    etiqueta.push_str(":443");
-}
-
 fn main() {
-    let mut servicio = String::from("catalogo");
-    agregar_puerto(&mut servicio);
-    println!("{servicio}");
+    let a = String::from("hola");
+    let b = a;                  // NO copia: MUEVE. Ahora b es el dueño
+    println!("{a}");            // ← error: valor movido
 }

@@ -19,7 +19,7 @@
 
 Esta lección no parece una lección de Rust porque todavía no enseña ownership, tipos ni `match`. Sin embargo, decide una parte importante de cómo vas a aprender el lenguaje: desde el primer día vas a trabajar con la misma cadena de herramientas, las mismas convenciones y el mismo tipo de errores que usa un proyecto real. Instalar algo que “más o menos compila” es suficiente para un ejercicio aislado; instalar el entorno correcto es necesario para seguir un curso, leer documentación actual y construir el `revisor` sin que la herramienta se vuelva un problema adicional.
 
-El curso parte de Rust estable 1.98.1 y de la edición 2024. Es una referencia concreta para que los programas, mensajes y ejemplos tengan el mismo significado para todos. Rust publica una versión estable aproximadamente cada seis semanas. Linux Mint, en cambio, hereda buena parte de sus paquetes de Ubuntu, y una distribución LTS prioriza estabilidad del sistema: congela versiones principales y aplica parches de seguridad. Es una decisión razonable para programas del sistema; no es una buena manera de seguir de cerca un lenguaje cuyo ecosistema, documentación y herramientas cambian con frecuencia.
+El curso se escribió y se comprobó con Rust estable 1.98.1 y la edición 2024. Es una referencia concreta para que los programas, mensajes y ejemplos tengan el mismo significado para todos; con una estable posterior los programas deben comportarse igual, aunque el texto de algún mensaje del compilador puede cambiar de redacción. Rust publica una versión estable aproximadamente cada seis semanas. Linux Mint, en cambio, hereda buena parte de sus paquetes de Ubuntu, y una distribución LTS prioriza estabilidad del sistema: congela versiones principales y aplica parches de seguridad. Es una decisión razonable para programas del sistema; no es una buena manera de seguir de cerca un lenguaje cuyo ecosistema, documentación y herramientas cambian con frecuencia.
 
 Por eso `apt install rustc` parece funcionar al principio y puede causar confusión después. Instala un compilador llamado `rustc`, pero no necesariamente el compilador que usan The Rust Book, los ejemplos recientes o los proyectos que encuentres. El problema no siempre se manifiesta como “tu versión es vieja”. A veces aparece como una característica desconocida, una edición que no existe, una sugerencia del compilador distinta o una dependencia que ya no acepta esa versión. Es el peor tipo de falla de preparación: ocurre más tarde y parece un error de tu programa.
 
@@ -195,7 +195,7 @@ cargo run
 
 La primera vez Cargo compila el paquete y después ejecuta el binario. En las siguientes ejecuciones, reutiliza artefactos que no cambiaron. A diferencia de `rustc fig00_01.rs`, no tienes que escribir el nombre del archivo ni el nombre del ejecutable: Cargo conoce la convención `src/main.rs` y sabe que el paquete `hola` produce el binario `hola`.
 
-Esta convención reduce decisiones repetitivas. Un programa Rust puede organizarse de varias maneras, pero Cargo da una estructura común para los casos frecuentes. Cuando abras el `revisor`, reconocerás `src/main.rs` como el binario y `src/lib.rs` como la biblioteca del paquete. Esa separación no se inventa en la lección 6: ya está respaldada por el proyecto que creaste hoy.
+Esta convención reduce decisiones repetitivas. Un programa Rust puede organizarse de varias maneras, pero Cargo da una estructura común para los casos frecuentes. El proyecto que creaste hoy trae solo `src/main.rs`, el binario. Cuando abras el `revisor`, reconocerás además `src/lib.rs`, la biblioteca del paquete. Esa separación no se inventa en la lección 6: Cargo la reconoce por convención, igual que reconoce `src/main.rs`.
 
 ### `cargo build`, `run`, `check` y el ciclo de trabajo
 
@@ -427,10 +427,10 @@ The Rust Book presenta la explicación ordenada de instalación, programa inicia
 
 ## Para leer más
 
-- [The Rust Programming Language, capítulo 1](https://doc.rust-lang.org/book/ch01-00-getting-started.html) — instalación, primer programa y Cargo. Consulta: 2 de octubre de 2026.
+- [The Rust Programming Language, capítulo 1](https://doc.rust-lang.org/book/ch01-00-getting-started.html) — instalación, primer programa y Cargo. Consultado el 2 de octubre de 2026.
 
-- [Rust: Install](https://www.rust-lang.org/tools/install) — instalación oficial con `rustup`, actualización de toolchains y notas sobre `PATH`. Consulta: 2 de octubre de 2026.
+- [Rust: Install](https://www.rust-lang.org/tools/install) — instalación oficial con `rustup`, actualización de toolchains y notas sobre `PATH`. Consultado el 2 de octubre de 2026.
 
-- [The Cargo Book: Why Cargo Exists](https://doc.rust-lang.org/cargo/guide/why-cargo-exists.html) — por qué Cargo administra paquetes, dependencias y las invocaciones a `rustc`. Consulta: 2 de octubre de 2026.
+- [The Cargo Book: Why Cargo Exists](https://doc.rust-lang.org/cargo/guide/why-cargo-exists.html) — por qué Cargo administra paquetes, dependencias y las invocaciones a `rustc`. Consultado el 2 de octubre de 2026.
 
-- [Rustlings](https://rustlings.rust-lang.org/) — instalación, inicialización y uso de ejercicios locales en paralelo con The Rust Book. Consulta: 2 de octubre de 2026.
+- [Rustlings](https://rustlings.rust-lang.org/) — instalación, inicialización y uso de ejercicios locales en paralelo con The Rust Book. Consultado el 2 de octubre de 2026.

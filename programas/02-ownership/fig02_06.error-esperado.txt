@@ -1,22 +1,22 @@
 error[E0382]: borrow of moved value: `a`
- --> fig02_02.rs:5:16
+ --> fig02_06.rs:5:16
   |
 3 |     let a = String::from("hola");
   |         - move occurs because `a` has type `String`, which does not implement the `Copy` trait
-4 |     let b = a;                  // NO copia: MUEVE. Ahora b es la dueña
+4 |     let b = a;                  // NO copia: MUEVE. Ahora b es el dueño
   |             - value moved here
 5 |     println!("{a}");            // ← error: valor movido
   |                ^ value borrowed here after move
   |
 help: consider cloning the value if the performance cost is acceptable
   |
-4 |     let b = a.clone();                  // NO copia: MUEVE. Ahora b es la dueña
+4 |     let b = a.clone();                  // NO copia: MUEVE. Ahora b es el dueño
   |              ++++++++
 
 warning: unused variable: `b`
- --> fig02_02.rs:4:9
+ --> fig02_06.rs:4:9
   |
-4 |     let b = a;                  // NO copia: MUEVE. Ahora b es la dueña
+4 |     let b = a;                  // NO copia: MUEVE. Ahora b es el dueño
   |         ^ help: if this is intentional, prefix it with an underscore: `_b`
   |
   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default

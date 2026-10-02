@@ -5,7 +5,7 @@
 # sin llamar «semana N» a una lección (el curso numera por lección), con las
 # secciones en orden, y con el número de objetivos, ejercicios y fuentes pedido.
 # Los README (el de la raíz y es/README.md) y es/bitacora.md pasan también por las
-# reglas de asistentes y de marcas pendientes; el README y es/README.md, además, por la de «semana N».
+# reglas de asistentes, de marcas pendientes y de emojis en títulos; el README y es/README.md, además, por la de «semana N».
 #
 # Uso:  herramientas/verificar-plantilla.sh [carpeta]     (por omisión: es)
 # Sale 0 si todas cumplen, 1 si alguna no, 2 si no pudo medir.
@@ -119,6 +119,9 @@ for f, con_semana in extras:
     encontrados += 1
     txt = open(f, encoding="utf8").read()
     prob = []
+    for l in fuera_de_codigo(txt.split("\n")):
+        if l.startswith("#") and EMOJI.search(l):
+            prob.append(f"emoji en un título: {l[:60]!r}")
     if PEND.search(txt): prob.append("quedan marcas PENDIENTE/ESQUELETO/TODO")
     ia = ASISTENTES.search(txt)
     if ia: prob.append(f"menciona un asistente o su empresa: {ia.group(0)!r}")

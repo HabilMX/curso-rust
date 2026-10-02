@@ -479,7 +479,7 @@ Escribe una función `es_sano(&Estado) -> bool` para las cuatro variantes del `E
 
 ### Ejercicio 3 — Una integración que no conoce detalles internos
 
-En `programas/revisor`, lee `tests/integracion.rs`. Agrega una prueba de integración que use exclusivamente `revisor::modelo` y `revisor::revisar`. Debe usar el servidor local compartido y comprobar que `revisar_todos` devuelve el mismo número de estados que servicios, incluso cuando uno recibe HTTP 500.
+En `programas/revisor`, lee `tests/integracion.rs`. Agrega una prueba de integración que use exclusivamente `revisor::modelo` y `revisor::revisar`. Debe usar el servidor local compartido y comprobar que `revisar_todos` devuelve el mismo número de estados que servicios, incluso cuando uno recibe HTTP 500. Escríbela antes de leer las pruebas que ya trae `tests/integracion.rs`, y luego compara: ¿qué comprueba la tuya que las otras no?
 
 ### Ejercicio 4 — Haz una prueba roja y vuelve a dejarla verde
 

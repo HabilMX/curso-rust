@@ -30,7 +30,7 @@ Esto no significa que Rust “adivine” lo que querías hacer. Al contrario: te
 
 El precio es real. Al inicio vas a escribir código que parece razonable, pero no compila. La reacción normal es intentar agregar `.clone()` hasta que desaparezca el error. A veces una copia es la decisión correcta; muchas veces es una señal de que la función pidió más propiedad de la que necesitaba. Aprender ownership consiste en dejar de tratar esos errores como obstáculos y empezar a leerlos como preguntas de diseño: ¿quién debe conservar este valor?, ¿cuánto tiempo necesita vivir?, ¿quién puede modificarlo?
 
-El capítulo 4 de *The Rust Programming Language* explica ownership, referencias, préstamos y slices. Léelo completo durante esta lección. No intentes memorizar todos los mensajes del compilador. El objetivo es construir un modelo mental sencillo: cada valor tiene una dueña; mover entrega esa responsabilidad; prestar permite usar un valor sin entregar la responsabilidad; y las reglas de préstamos evitan que una lectura vea un dato mientras alguien lo está cambiando.
+El capítulo 4 de *The Rust Programming Language* explica ownership, referencias, préstamos y slices. Léelo completo durante esta lección. No intentes memorizar todos los mensajes del compilador. El objetivo es construir un modelo mental sencillo: cada valor tiene un dueño; mover entrega esa responsabilidad; prestar permite usar un valor sin entregar la responsabilidad; y las reglas de préstamos evitan que una lectura vea un dato mientras alguien lo está cambiando.
 
 El proyecto real ya usa esta idea, aunque todavía no hayas escrito todas sus piezas. `Servicio` posee sus campos `String` porque el revisor debe guardar un nombre y una URL más allá de la función que los leyó. En cambio, las funciones que imprimen un reporte reciben referencias a los servicios y a sus estados: solo necesitan consultarlos, no adueñarse de ellos. Más adelante, en las lecciones 3, 4 y 5, estas mismas decisiones aparecerán en structs, colecciones, errores y lifetimes.
 
@@ -40,9 +40,9 @@ El proyecto real ya usa esta idea, aunque todavía no hayas escrito todas sus pi
 
 Ownership se resume en tres reglas.
 
-1. Cada valor en Rust tiene una dueña.
-2. Solo puede haber una dueña de un valor a la vez.
-3. Cuando la dueña sale de ámbito, Rust libera el valor.
+1. Cada valor en Rust tiene un dueño.
+2. Solo puede haber un dueño de un valor a la vez.
+3. Cuando el dueño sale de ámbito, Rust libera el valor.
 
 Un ámbito es la parte del programa donde un nombre existe. Las llaves delimitan ámbitos, igual que en la lección 1. La diferencia ahora es que salir de un ámbito no solo vuelve inaccesible una variable: también determina cuándo se destruye el valor asociado. Para tipos que reservan recursos, Rust llama a `drop` automáticamente. `String`, por ejemplo, libera el bloque de memoria donde guarda sus caracteres.
 
@@ -52,7 +52,7 @@ Un ámbito es la parte del programa donde un nombre existe. Las llaves delimitan
 // fig02_01.rs
 fn main() {
     {
-        let s = String::from("hola");     // s es la dueña
+        let s = String::from("hola");     // s es el dueño
         println!("{s}");
     }                                     // aquí termina el ámbito: se libera. Sin free(), sin GC
 }
@@ -65,7 +65,7 @@ hola
 
 `String::from("hola")` crea un `String` que posee memoria dinámica. Mientras `s` está en el ámbito interno, puede usarse para imprimir el texto. Al llegar a la llave de cierre, `s` deja de existir y Rust libera su memoria. No escribiste `free`, no calculaste tamaños y no esperaste a que un recolector decidiera pasar. El compilador inserta el trabajo necesario porque conoce el alcance de `s`.
 
-La palabra “propiedad” no describe la ubicación física de un dato; describe responsabilidad. El valor puede estar en la pila, en el heap o contener referencias a otros valores. Lo importante es que Rust puede identificar una dueña responsable de limpiar el recurso. Muchos tipos simples, como `u64`, `bool` o `char`, caben completamente en la pila y no requieren liberar nada especial. Un `String`, un `Vec<T>` o un `HashMap<K, V>` administran memoria dinámica y sí necesitan un final ordenado.
+La palabra “propiedad” no describe la ubicación física de un dato; describe responsabilidad. El valor puede estar en la pila, en el heap o contener referencias a otros valores. Lo importante es que Rust puede identificar un dueño responsable de limpiar el recurso. Muchos tipos simples, como `u64`, `bool` o `char`, caben completamente en la pila y no requieren liberar nada especial. Un `String`, un `Vec<T>` o un `HashMap<K, V>` administran memoria dinámica y sí necesitan un final ordenado.
 
 Esta liberación se llama determinista porque ocurre en un punto que puedes razonar al leer el programa: al final del ámbito, salvo que el valor se haya movido antes. Es importante distinguirla de la administración manual. No eliges cuándo llamar `drop` para cada valor ni debes hacerlo en condiciones normales. Rust conoce el tipo y genera la liberación correcta. Si un tipo contiene otros valores, su destructor libera también lo que corresponda dentro de él.
 
@@ -89,14 +89,14 @@ pub struct Servicio {
 
 ### Mover, copiar y clonar
 
-La segunda regla dice que un valor solo tiene una dueña a la vez. Por eso una asignación no siempre significa copiar. Con tipos que poseen recursos, Rust suele mover el valor: la nueva variable se convierte en la dueña y el nombre anterior deja de poder usarse.
+La segunda regla dice que un valor solo tiene un dueño a la vez. Por eso una asignación no siempre significa copiar. Con tipos que poseen recursos, Rust suele mover el valor: la nueva variable se convierte en el dueño y el nombre anterior deja de poder usarse.
 
 Esto sorprende si vienes de Go. En Go, asignar un `string` a otra variable copia su encabezado inmutable y las dos variables pueden leerse. Asignar un struct copia sus campos; si contiene un slice o un map, ambas copias pueden seguir apuntando a datos compartidos. En Rust, el compilador exige que esa relación sea explícita porque una copia superficial de un tipo dueño puede dejar dos valores intentando liberar el mismo recurso.
 
-**Fig. 2.3** | Las dos salidas: copiar o prestar.
+**Fig. 2.2** | Las dos salidas: copiar o prestar.
 
 ```rust
-// fig02_03.rs
+// fig02_02.rs
 fn main() {
     let a = String::from("hola");
     let b = a.clone();          // copia explícita: pagas la copia y lo dices
@@ -106,7 +106,7 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig02_03.rs && ./fig02_03
+$ rustc --edition 2024 fig02_02.rs && ./fig02_02
 hola hola hola
 ```
 
@@ -114,7 +114,7 @@ hola hola hola
 
 No debes interpretar esto como una prohibición de clonar. Una copia es correcta cuando el programa de verdad necesita dos valores independientes: guardar un nombre para el reporte y otro para enviarlo a una tarea, conservar una configuración original antes de transformarla o separar datos que vivirán tiempos distintos. El problema aparece cuando `clone()` se usa mecánicamente para silenciar un error sin responder quién necesita poseer el dato.
 
-El tercer nombre, `c`, es una referencia. `&a` no copia los caracteres ni entrega la propiedad. Crea un préstamo de solo lectura. Por eso se pueden imprimir `a`, `b` y `c`: `a` sigue siendo la dueña; `b` es dueña de otra copia; `c` solo apunta temporalmente a `a`.
+El tercer nombre, `c`, es una referencia. `&a` no copia los caracteres ni entrega la propiedad. Crea un préstamo de solo lectura. Por eso se pueden imprimir `a`, `b` y `c`: `a` sigue siendo el dueño; `b` es dueño de otra copia; `c` solo apunta temporalmente a `a`.
 
 Los tipos que implementan el trait `Copy` se comportan distinto. Enteros, booleanos, caracteres y tuplas compuestas exclusivamente por valores `Copy` se copian implícitamente porque duplicarlos es barato y no requieren liberar memoria. Si asignas `let b = a` cuando `a` es un `u64`, puedes usar ambos nombres. No es que ownership desaparezca: cada variable recibe su propia copia del valor.
 
@@ -145,16 +145,16 @@ El revisor clona solamente cuando necesita construir una salida que debe poseer 
         .collect();
 ```
 
-Aquí `servicios` y `estados` se prestan a la función de reporte. `s.nombre.clone()` y `motivo.clone()` son decisiones necesarias: `EstadoJson` debe sobrevivir como elemento de `lineas` y luego convertirse a JSON. El código no clona por miedo al compilador; clona porque el resultado tiene dueña propia.
+Aquí `servicios` y `estados` se prestan a la función de reporte. `s.nombre.clone()` y `motivo.clone()` son decisiones necesarias: `EstadoJson` debe sobrevivir como elemento de `lineas` y luego convertirse a JSON. El código no clona por miedo al compilador; clona porque el resultado tiene dueño propia.
 
 ### Referencias inmutables: prestar para leer
 
 Una referencia es una forma de permitir acceso a un valor sin transferir su propiedad. Se escribe `&T`: “una referencia a un `T`”. Si tienes un `String` y una función solo necesita conocer su longitud, pasar `&String` evita crear una copia y evita que la función consuma el texto.
 
-**Fig. 2.4** | Prestar para leer.
+**Fig. 2.3** | Prestar para leer.
 
 ```rust
-// fig02_04.rs
+// fig02_03.rs
 fn largo(s: &String) -> usize { s.len() }      // presta, no toma posesión
 
 fn main() {
@@ -165,15 +165,15 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig02_04.rs && ./fig02_04
+$ rustc --edition 2024 fig02_03.rs && ./fig02_03
 hola mide 4
 ```
 
-La función `largo` recibe una referencia. Dentro de ella, `s.len()` consulta la longitud, pero no puede quedarse con el `String` ni modificarlo. Cuando la llamada termina, el préstamo termina y la dueña original sigue siendo la variable `s` de `main`. Eso explica por qué la última línea puede imprimir tanto el texto como su longitud.
+La función `largo` recibe una referencia. Dentro de ella, `s.len()` consulta la longitud, pero no puede quedarse con el `String` ni modificarlo. Cuando la llamada termina, el préstamo termina y el dueño original sigue siendo la variable `s` de `main`. Eso explica por qué la última línea puede imprimir tanto el texto como su longitud.
 
 El ejemplo conserva `&String` porque muestra directamente el contraste entre un `String` dueño y una referencia a él. En una API general conviene recibir `&str` cuando solo necesitas leer texto. `&str` es una vista de una secuencia UTF-8; acepta tanto un literal como una referencia a `String`. La lección 4 profundizará esa distinción, pero desde ahora puedes usar una regla práctica: guarda texto que posees como `String`; recibe texto de solo lectura como `&str`.
 
-Una referencia no es una copia del valor. Tiene una vida útil limitada por el valor al que apunta. Rust no permite devolver una referencia a una variable local que desaparecerá al salir de una función, ni conservar una referencia cuando su dueña ya se movió. Esta parte del análisis se conoce como comprobación de préstamos o *borrow checking*.
+Una referencia no es una copia del valor. Tiene una vida útil limitada por el valor al que apunta. Rust no permite devolver una referencia a una variable local que desaparecerá al salir de una función, ni conservar una referencia cuando su dueño ya se movió. Esta parte del análisis se conoce como comprobación de préstamos o *borrow checking*.
 
 La referencia hace visible el contrato de una función. Una firma que recibe `String` comunica “necesito tomar este texto”. Una que recibe `&str` comunica “solo necesito leerlo”. En Go, pasar un `string` es barato porque su representación se copia; pasar una estructura grande por valor o por puntero requiere leer la documentación y conocer su implementación. Rust vuelve esa diferencia parte de la firma.
 
@@ -195,12 +195,12 @@ pub fn tabla(servicios: &[Servicio], estados: &[Estado]) -> String {
 
 ### Referencias mutables: prestar para modificar
 
-Una referencia mutable se escribe `&mut T`. Sirve cuando una función debe modificar un valor cuya propiedad sigue siendo de quien llama. Para crearla, necesitas dos cosas: la dueña debe declararse con `mut`, y el préstamo debe escribirse como `&mut`.
+Una referencia mutable se escribe `&mut T`. Sirve cuando una función debe modificar un valor cuya propiedad sigue siendo de quien llama. Para crearla, necesitas dos cosas: el dueño debe declararse con `mut`, y el préstamo debe escribirse como `&mut`.
 
-**Fig. 2.6** | Prestar exclusivamente para modificar.
+**Fig. 2.4** | Prestar exclusivamente para modificar.
 
 ```rust
-// fig02_06.rs
+// fig02_04.rs
 fn agregar_puerto(etiqueta: &mut String) {
     etiqueta.push_str(":443");
 }
@@ -213,11 +213,11 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig02_06.rs && ./fig02_06
+$ rustc --edition 2024 fig02_04.rs && ./fig02_04
 catalogo:443
 ```
 
-`servicio` es mutable porque su contenido cambiará. `agregar_puerto` no recibe el `String` por valor: recibe un préstamo exclusivo y agrega caracteres al mismo texto. Al terminar la llamada, el préstamo termina y `main` vuelve a usar a la dueña para imprimirla.
+`servicio` es mutable porque su contenido cambiará. `agregar_puerto` no recibe el `String` por valor: recibe un préstamo exclusivo y agrega caracteres al mismo texto. Al terminar la llamada, el préstamo termina y `main` vuelve a usar al dueño para imprimirla.
 
 La exclusividad es la condición importante. Durante un préstamo `&mut`, nadie más puede leer o modificar el mismo dato a través de otra referencia. No es una limitación arbitraria: si una parte del programa cambia una cadena mientras otra asume que la está leyendo establemente, el resultado puede depender del orden de ejecución. En programas concurrentes, esa situación es una carrera de datos.
 
@@ -256,10 +256,10 @@ En el revisor, la tabla se construye con una variable mutable. La propiedad de `
 
 Ownership no obliga a copiar cuando quieres obtener una parte de un valor. Una función puede recibir una referencia y devolver otra referencia a una parte de la misma información, siempre que Rust pueda comprobar que la salida no vivirá más que la entrada. Ese patrón aparece con slices de arreglos, slices de vectores y `&str`.
 
-**Fig. 2.7** | Devolver una vista prestada de texto.
+**Fig. 2.5** | Devolver una vista prestada de texto.
 
 ```rust
-// fig02_07.rs
+// fig02_05.rs
 fn primera_palabra(s: &str) -> &str {
     s.split_whitespace().next().unwrap_or("")
 }
@@ -272,7 +272,7 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig02_07.rs && ./fig02_07
+$ rustc --edition 2024 fig02_05.rs && ./fig02_05
 primera: revisor
 ```
 
@@ -299,40 +299,40 @@ La anotación `'a` dice que las referencias dentro de `Fila` no pueden vivir má
 
 ### E0382: usar un valor después de moverlo
 
-El siguiente programa no compila a propósito. La asignación `let b = a` mueve el `String` de `a` a `b`. La última línea intenta pedir prestado `a` para imprimirlo, pero `a` ya no es dueña ni puede prestarse.
+El siguiente programa no compila a propósito. La asignación `let b = a` mueve el `String` de `a` a `b`. La última línea intenta pedir prestado `a` para imprimirlo, pero `a` ya no es dueño ni puede prestarse.
 
-**Fig. 2.2** | Mover, no copiar.
+**Fig. 2.6** | Mover, no copiar.
 
 ```rust
-// fig02_02.rs
+// fig02_06.rs
 fn main() {
     let a = String::from("hola");
-    let b = a;                  // NO copia: MUEVE. Ahora b es la dueña
+    let b = a;                  // NO copia: MUEVE. Ahora b es el dueño
     println!("{a}");            // ← error: valor movido
 }
 ```
 
 ```bash
-$ rustc --edition 2024 fig02_02.rs
+$ rustc --edition 2024 fig02_06.rs
 error[E0382]: borrow of moved value: `a`
- --> fig02_02.rs:5:16
+ --> fig02_06.rs:5:16
   |
 3 |     let a = String::from("hola");
   |         - move occurs because `a` has type `String`, which does not implement the `Copy` trait
-4 |     let b = a;                  // NO copia: MUEVE. Ahora b es la dueña
+4 |     let b = a;                  // NO copia: MUEVE. Ahora b es el dueño
   |             - value moved here
 5 |     println!("{a}");            // ← error: valor movido
   |                ^ value borrowed here after move
   |
 help: consider cloning the value if the performance cost is acceptable
   |
-4 |     let b = a.clone();                  // NO copia: MUEVE. Ahora b es la dueña
+4 |     let b = a.clone();                  // NO copia: MUEVE. Ahora b es el dueño
   |              ++++++++
 
 warning: unused variable: `b`
- --> fig02_02.rs:4:9
+ --> fig02_06.rs:4:9
   |
-4 |     let b = a;                  // NO copia: MUEVE. Ahora b es la dueña
+4 |     let b = a;                  // NO copia: MUEVE. Ahora b es el dueño
   |         ^ help: if this is intentional, prefix it with an underscore: `_b`
   |
   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
@@ -342,7 +342,7 @@ error: aborting due to 1 previous error; 1 warning emitted
 For more information about this error, try `rustc --explain E0382`.
 ```
 
-`E0382` significa que intentaste usar un valor después de haber transferido su propiedad. El mensaje señala tres lugares: dónde nació `a`, dónde ocurrió el movimiento y dónde intentaste usarlo otra vez. Esa secuencia es más útil que memorizar el código del error: sigue las flechas y pregunta quién es la dueña después de cada línea.
+`E0382` significa que intentaste usar un valor después de haber transferido su propiedad. El mensaje señala tres lugares: dónde nació `a`, dónde ocurrió el movimiento y dónde intentaste usarlo otra vez. Esa secuencia es más útil que memorizar el código del error: sigue las flechas y pregunta quién es el dueño después de cada línea.
 
 Hay tres arreglos posibles, y no son intercambiables. Si ya no necesitas `a`, imprime `b`. Si necesitas dos valores independientes, usa `a.clone()` y acepta el costo de la copia. Si la segunda parte solo necesita leer el valor, cambia el diseño para prestar `&a` en vez de moverlo. La tercera opción suele ser la mejor cuando escribes funciones auxiliares para el revisor.
 
@@ -352,10 +352,10 @@ El aviso sobre `b` aparece porque el programa no llega a usarlo. No es el error 
 
 El siguiente error representa la segunda regla de préstamos. `r1` y `r2` son referencias inmutables vivas porque se usan en el `println!` final. Mientras esas lecturas existan, Rust no puede crear `r3`, una referencia mutable al mismo `String`.
 
-**Fig. 2.5** | Lecturas y escritura a la vez.
+**Fig. 2.7** | Lecturas y escritura a la vez.
 
 ```rust
-// fig02_05.rs
+// fig02_07.rs
 fn main() {
     let mut s = String::from("hola");
     let r1 = &s;                  // lectura, ok
@@ -366,9 +366,9 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig02_05.rs
+$ rustc --edition 2024 fig02_07.rs
 error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
- --> fig02_05.rs:6:14
+ --> fig02_07.rs:6:14
   |
 4 |     let r1 = &s;                  // lectura, ok
   |              -- immutable borrow occurs here
@@ -395,7 +395,7 @@ Este error es una versión local de una garantía que será decisiva en la lecci
 
 El compilador sugiere `clone()` en varios mensajes porque es una solución mecánica y segura: crea un valor independiente. Sin embargo, la sugerencia no conoce el diseño de tu programa ni el tamaño de tus datos. Si clonas un `String` pequeño una vez, probablemente no importa. Si clonas una lista de servicios en cada función o duplicas cuerpos HTTP grandes en un ciclo, agregas tiempo y memoria sin necesitarlo.
 
-Antes de escribir `.clone()`, pregunta si la función solo necesita leer. Si la respuesta es sí, recibe `&T` o `&str`. Si debe modificar algo pero la dueña debe conservarlo, recibe `&mut T`. Clona cuando necesites dos propietarias reales, como el JSON del reporte y los datos originales que siguen vivos para otra operación.
+Antes de escribir `.clone()`, pregunta si la función solo necesita leer. Si la respuesta es sí, recibe `&T` o `&str`. Si debe modificar algo pero el dueño debe conservarlo, recibe `&mut T`. Clona cuando necesites dos propietarias reales, como el JSON del reporte y los datos originales que siguen vivos para otra operación.
 
 ### Recibir `String` por valor cuando solo vas a leer
 
@@ -405,7 +405,7 @@ Para funciones de consulta, prefiere `&str` si trabajas con texto y `&T` si trab
 
 ### Pensar que `mut` significa “puedo prestar mutablemente cuando quiera”
 
-`let mut s` permite modificar a `s`, pero no elimina las reglas de préstamos. La mutabilidad pertenece a la dueña; la exclusividad pertenece a cada préstamo. Puedes declarar una cadena mutable y aun así recibir `E0502` si existen referencias de lectura activas. También puedes tener una variable inmutable que contenga una referencia mutable creada en otro contexto; los dos conceptos son distintos.
+`let mut s` permite modificar a `s`, pero no elimina las reglas de préstamos. La mutabilidad pertenece al dueño; la exclusividad pertenece a cada préstamo. Puedes declarar una cadena mutable y aun así recibir `E0502` si existen referencias de lectura activas. También puedes tener una variable inmutable que contenga una referencia mutable creada en otro contexto; los dos conceptos son distintos.
 
 Usa `mut` solo cuando el nombre debe cambiar o cuando vas a pedir un préstamo mutable. Si una variable nunca cambia, quitar `mut` deja una intención más clara y evita avisos del compilador.
 
@@ -423,11 +423,11 @@ La pregunta útil es siempre la misma: ¿quién debe poseer estos caracteres des
 
 ## Ejercicios
 
-### Ejercicio 1 — Sigue a la dueña
+### Ejercicio 1 — Sigue al dueño
 
 Lee las siguientes situaciones y escribe, antes de compilar, cuál nombre puede usarse al final: una asignación de `u64`; una asignación de `String`; y una asignación de `String` seguida de `clone()`. Después crea tres archivos pequeños y comprueba tus respuestas con `rustc --edition 2024`.
 
-Explica en una frase por qué el entero se copia, por qué el `String` se mueve y por qué el `clone()` produce dos dueñas. No uses `Copy` como una palabra mágica: relaciónalo con el costo y con la necesidad de liberar memoria.
+Explica en una frase por qué el entero se copia, por qué el `String` se mueve y por qué el `clone()` produce dos dueños. No uses `Copy` como una palabra mágica: relaciónalo con el costo y con la necesidad de liberar memoria.
 
 ### Ejercicio 2 — Una función que toma y otra que presta
 
@@ -435,7 +435,7 @@ Escribe dos funciones sobre un nombre de servicio. La primera debe recibir un `S
 
 Primero deja activa la línea que provoca `E0382` y lee el diagnóstico completo. Luego comenta esa línea para que el programa compile. No arregles la primera función con `clone()`: el objetivo es observar la diferencia entre tomar propiedad y prestar.
 
-### Ejercicio 3 — Actualiza un servicio sin cambiar de dueña
+### Ejercicio 3 — Actualiza un servicio sin cambiar de dueño
 
 Escribe `fn agregar_puerto(etiqueta: &mut String)` para anexar `:443` a una etiqueta. Declara un `String` mutable en `main`, préstalo a la función y comprueba que `main` puede imprimir el resultado al final.
 
@@ -463,24 +463,24 @@ La diferencia no está en el número que devuelven, sino en el contrato de entra
 
 ### Solución 3
 
-La solución es la de la figura 2.6: la dueña se declara como `let mut servicio`, se llama a la función con `&mut servicio` y se imprime después de que la llamada termina. La función no devuelve el `String` porque nunca lo recibió como propiedad.
+La solución es la de la figura 2.4: el dueño se declara como `let mut servicio`, se llama a la función con `&mut servicio` y se imprime después de que la llamada termina. La función no devuelve el `String` porque nunca lo recibió como propiedad.
 
 Para corregir el conflicto de préstamos, usa por completo la referencia de lectura antes de crear la referencia mutable. El punto importante no es poner ambas referencias en bloques artificiales, sino hacer visible que la fase de lectura terminó antes de la fase de escritura.
 
 ### Solución 4
 
-La solución es la de la figura 2.7. `split_whitespace()` ignora espacios iniciales y separa las palabras; `next()` produce un `Option<&str>`; `unwrap_or("")` devuelve una cadena vacía si no había ninguna palabra. El resultado es una referencia tomada de la entrada, no un `String` nuevo.
+La solución es la de la figura 2.5. `split_whitespace()` ignora espacios iniciales y separa las palabras; `next()` produce un `Option<&str>`; `unwrap_or("")` devuelve una cadena vacía si no había ninguna palabra. El resultado es una referencia tomada de la entrada, no un `String` nuevo.
 
 La prueba correcta imprime primero la palabra y luego el `String` original. Eso demuestra que `primera_palabra` no tomó la propiedad de `texto`. Si intentaras devolver una referencia a un `String` creado dentro de la función, Rust lo rechazaría porque ese `String` se destruiría al terminar la llamada.
 
 ## Cómo sé que lo logré
 
 - [ ] `rustc --edition 2024 fig02_01.rs && ./fig02_01` imprime `hola`.
-- [ ] `rustc --edition 2024 fig02_03.rs && ./fig02_03` imprime tres veces `hola` y puedo explicar cuál valor se clonó y cuál se prestó.
-- [ ] `rustc --edition 2024 fig02_02.rs` falla con `E0382`, y sé explicar en qué línea se movió la propiedad.
-- [ ] `rustc --edition 2024 fig02_05.rs` falla con `E0502`, y sé corregirlo terminando primero las lecturas.
-- [ ] `rustc --edition 2024 fig02_06.rs && ./fig02_06` imprime `catalogo:443`.
-- [ ] `rustc --edition 2024 fig02_07.rs && ./fig02_07` imprime `primera: revisor`.
+- [ ] `rustc --edition 2024 fig02_02.rs && ./fig02_02` imprime tres veces `hola` y puedo explicar cuál valor se clonó y cuál se prestó.
+- [ ] `rustc --edition 2024 fig02_06.rs` falla con `E0382`, y sé explicar en qué línea se movió la propiedad.
+- [ ] `rustc --edition 2024 fig02_07.rs` falla con `E0502`, y sé corregirlo terminando primero las lecturas.
+- [ ] `rustc --edition 2024 fig02_04.rs && ./fig02_04` imprime `catalogo:443`.
+- [ ] `rustc --edition 2024 fig02_05.rs && ./fig02_05` imprime `primera: revisor`.
 - [ ] Terminé `move_semantics` y `primitive_types` de Rustlings sin usar `clone()` como solución automática.
 - [ ] Puedo explicar en una frase por qué Rust libera memoria al salir de ámbito sin requerir un recolector de basura.
 

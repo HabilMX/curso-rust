@@ -1,13 +1,16 @@
 // fig01_07.rs
 fn main() {
-    let espacios = "   ";
-    let espacios = espacios.len();
+    let mut x = 3;
+    let servicios = vec!["catalogo", "pagos", "reportes"];
 
-    let medicion: (u16, u64, bool) = (200, 750, true);
-    let (codigo, ms, saludable) = medicion;
-    let nombres = ["catalogo", "pagos"];
+    loop { break; }                          // infinito, con break
+    while x > 0 { x -= 1; }
+    for i in 0..10 { print!("{i} "); }       // rango: 0 a 9
+    println!();
+    for i in 0..=10 { print!("{i} "); }      // inclusivo: 0 a 10
+    println!();
+    for s in &servicios { println!("{s}"); } // sobre una referencia, para no consumir la lista
 
-    println!("espacios = {espacios}");
-    println!("codigo = {codigo}, ms = {ms}, saludable = {saludable}");
-    println!("primer servicio = {}", nombres[0]);
+    let r = loop { break 42; };              // 🔑 loop devuelve valor con break
+    println!("x = {x}, r = {r}");
 }

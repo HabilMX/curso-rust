@@ -1,6 +1,6 @@
 # Lección 8 — El programa terminado
 
-**Tiempo:** 2 × 45 min
+**Tiempo:** 2 × 45 min.
 
 **Qué construyes:** el `revisor` completo, en un binario
 
@@ -321,7 +321,7 @@ pagos espera 250 ms
 YAML inválido: .[0]: missing field `url` at line 1 column 3
 ```
 
-El mismo `struct Servicio` sirve para leer y para escribir porque deriva las dos mitades de `serde`: `Deserialize` para construirlo desde YAML y `Serialize` para escribirlo como JSON (el `Servicio` del `revisor` solo deriva `Deserialize`, porque nunca se escribe de vuelta). Fíjate en dos detalles. El servicio `catalogo` no declara `timeout_ms` en el YAML y aun así sale con 5000: es el efecto de `#[serde(default = ...)]`. Y el YAML inválido no hace caer el programa con un pánico: `from_str` devuelve un `Err` cuyo mensaje dice qué falta (`missing field `url``) y dónde (`.[0]` es el primer elemento de la lista; `line 1 column 3`, la posición en el texto). Ese mensaje es el que el `revisor` le muestra a quien corrige su archivo. Y como `yaml_serde` es la continuación mantenida de `serde_yaml` (el crate original ya no recibe cambios, como viste en la lección 6), todo lo que aquí se hace con `from_str` funciona igual con cualquiera de los dos nombres.
+El mismo `struct Servicio` sirve para leer y para escribir porque deriva las dos mitades de `serde`: `Deserialize` para construirlo desde YAML y `Serialize` para escribirlo como JSON (el `Servicio` del `revisor` solo deriva `Deserialize`, porque nunca se escribe de vuelta). Fíjate en dos detalles. El servicio `catalogo` no declara `timeout_ms` en el YAML y aun así sale con 5000: es el efecto de `#[serde(default = ...)]`. Y el YAML inválido no hace caer el programa con un pánico: `from_str` devuelve un `Err` cuyo mensaje dice qué falta (``missing field `url` ``) y dónde (`.[0]` es el primer elemento de la lista; `line 1 column 3`, la posición en el texto). Ese mensaje es el que el `revisor` le muestra a quien corrige su archivo. Y como `yaml_serde` es la continuación mantenida de `serde_yaml` (el crate original ya no recibe cambios, como viste en la lección 6), todo lo que aquí se hace con `from_str` funciona igual con cualquiera de los dos nombres.
 
 <!-- verificar:extracto:src/modelo.rs -->
 ```rust
@@ -726,9 +726,9 @@ Usa las reglas de `config::validar` como referencia, pero escribe primero tus ca
 
 ### Ejercicio 3 — Prueba el contrato del binario
 
-En `programas/revisor/`, lee `tests/binario.rs`. Agrega una prueba de punta a punta para el formato inválido `-f xml`. Debe comprobar que el código de salida sea 2, que no haya tabla en la salida estándar y que la salida de error nombre `--formato`.
+Sin abrir todavía `tests/binario.rs`, escribe una prueba de punta a punta para el formato inválido `-f xml` (en una copia del proyecto, o con otro nombre si trabajas en el original). Debe comprobar que el código de salida sea 2, que no haya tabla en la salida estándar y que la salida de error nombre `--formato`.
 
-Después corre solo esa prueba y luego toda la suite. No cambies el código del proyecto para que pase una prueba mal escrita: la prueba debe describir el contrato que ya expone `main.rs`.
+Después corre solo esa prueba y luego toda la suite. No cambies el código del proyecto para que pase una prueba mal escrita: la prueba debe describir el contrato que ya expone `main.rs`. Al terminar, abre `tests/binario.rs`: el proyecto ya trae una prueba para este contrato y es la solución de referencia; compara qué verifica cada una.
 
 ### Ejercicio 4 — Compara las dos implementaciones
 

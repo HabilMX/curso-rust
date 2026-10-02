@@ -1,7 +1,8 @@
 // fig02_03.rs
+fn largo(s: &String) -> usize { s.len() }      // presta, no toma posesión
+
 fn main() {
-    let a = String::from("hola");
-    let b = a.clone();          // copia explícita: pagas la copia y lo dices
-    let c = &a;                 // PRESTAR en vez de mover ← esto es lo normal
-    println!("{a} {b} {c}");
+    let s = String::from("hola");
+    let n = largo(&s);
+    println!("{s} mide {n}");                   // sigue siendo mía ✓
 }

@@ -1,6 +1,7 @@
 // fig02_02.rs
 fn main() {
     let a = String::from("hola");
-    let b = a;                  // NO copia: MUEVE. Ahora b es la dueña
-    println!("{a}");            // ← error: valor movido
+    let b = a.clone();          // copia explícita: pagas la copia y lo dices
+    let c = &a;                 // PRESTAR en vez de mover ← esto es lo normal
+    println!("{a} {b} {c}");
 }

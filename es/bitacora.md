@@ -6,7 +6,7 @@ notar ese cambio si lo dejaste escrito.
 
 ---
 
-## 🔴 Mis peleas con el borrow checker
+## Mis peleas con el borrow checker
 
 _Cada vez que el compilador te bloquee y no entiendas por qué: pega el error, y luego cómo lo resolviste._
 
@@ -31,7 +31,7 @@ _fecha:_ · Dudas:
 
 _fecha:_ · ¿Me mordió el punto y coma de más?
 
-## Semana 2 — Ownership 🔴
+## Semana 2 — Ownership
 
 _fecha:_
 

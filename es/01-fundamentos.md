@@ -63,10 +63,10 @@ El tipo de `x` está escrito como `i32`, pero Rust podría inferirlo aquí porqu
 
 El sombreado es distinto de la mutabilidad. Con sombreado declaras una nueva variable con el mismo nombre; la anterior deja de ser accesible desde ese punto. Es útil cuando una idea pasa por etapas y quieres conservar un nombre honesto. Por ejemplo, un texto con espacios y la cantidad de espacios son dos valores distintos, pero ambos pueden llamarse `espacios` porque la primera versión ya no hace falta. A diferencia de `mut`, el sombreado permite que cambie el tipo.
 
-**Fig. 1.7** | Sombreado, tuplas y arreglos.
+**Fig. 1.2** | Sombreado, tuplas y arreglos.
 
 ```rust
-// fig01_07.rs
+// fig01_02.rs
 fn main() {
     let espacios = "   ";
     let espacios = espacios.len();
@@ -82,7 +82,7 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig01_07.rs && ./fig01_07
+$ rustc --edition 2024 fig01_02.rs && ./fig01_02
 espacios = 3
 codigo = 200, ms = 750, saludable = true
 primer servicio = catalogo
@@ -145,10 +145,10 @@ Los tipos escalares guardan un solo valor. Los enteros con signo son `i8`, `i16`
 
 Rust no hace conversiones numéricas implícitas. No es una rareza aislada: evita que una asignación aparentemente inocente cambie tamaño, signo o rango sin que quien escribió el código lo haya considerado. En Go las conversiones entre tipos numéricos también se piden explícitamente; Rust conserva esa disciplina y la vuelve especialmente importante porque sus tipos enteros se usan con frecuencia para representar capacidades, longitudes y datos de red.
 
-**Fig. 1.2** | No hay conversión implícita, ni entre números.
+**Fig. 1.3** | No hay conversión implícita, ni entre números.
 
 ```rust
-// fig01_02.rs
+// fig01_03.rs
 fn main() {
     let a: i32 = 5;
     let b: i64 = a;             // ← no compila
@@ -157,9 +157,9 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig01_02.rs
+$ rustc --edition 2024 fig01_03.rs
 error[E0308]: mismatched types
- --> fig01_02.rs:4:18
+ --> fig01_03.rs:4:18
   |
 4 |     let b: i64 = a;             // ← no compila
   |            ---   ^ expected `i64`, found `i32`
@@ -178,10 +178,10 @@ For more information about this error, try `rustc --explain E0308`.
 
 Para una conversión simple y conocida puedes usar `as`. La conversión de `i32` a `i64` es segura para este caso porque todo `i32` cabe en un `i64`. Sin embargo, `as` también permite conversiones que pueden truncar, reinterpretar signo o perder precisión. No lo uses como una forma de “hacer que el compilador se calle”. Cuando una conversión pueda fallar o perder información, más adelante conocerás `TryFrom`, `TryInto` y `Result`.
 
-**Fig. 1.3** | La conversión se pide con `as`.
+**Fig. 1.4** | La conversión se pide con `as`.
 
 ```rust
-// fig01_03.rs
+// fig01_04.rs
 fn main() {
     let a: i32 = 5;
     let b: i64 = a as i64;      // así
@@ -190,15 +190,15 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig01_03.rs && ./fig01_03
+$ rustc --edition 2024 fig01_04.rs && ./fig01_04
 5
 ```
 
 Además de enteros, los escalares incluyen `f32` y `f64` para números de punto flotante, `bool` para `true` o `false`, y `char` para un carácter Unicode. Para el `revisor`, evita usar punto flotante si un entero expresa mejor la unidad. Guardar `750` milisegundos como `u64` es más claro que guardar `0.75` segundos como `f64`, y evita preguntas sobre redondeo cuando muestres, compares o serialices el valor.
 
-Los tipos compuestos agrupan varios valores. Una tupla puede guardar elementos de tipos distintos y tiene tamaño fijo. En la figura 1.7, `(u16, u64, bool)` representa tres resultados que pertenecen a una misma medición: código, duración y estado de salud. La desestructuración `let (codigo, ms, saludable) = medicion;` extrae esos valores con nombres útiles. Las tuplas son adecuadas para resultados pequeños y locales; cuando el significado de los campos sea central al programa, como lo será un servicio, una estructura con campos con nombre será mejor. Eso llega en la lección 3.
+Los tipos compuestos agrupan varios valores. Una tupla puede guardar elementos de tipos distintos y tiene tamaño fijo. En la figura 1.2, `(u16, u64, bool)` representa tres resultados que pertenecen a una misma medición: código, duración y estado de salud. La desestructuración `let (codigo, ms, saludable) = medicion;` extrae esos valores con nombres útiles. Las tuplas son adecuadas para resultados pequeños y locales; cuando el significado de los campos sea central al programa, como lo será un servicio, una estructura con campos con nombre será mejor. Eso llega en la lección 3.
 
-Un arreglo como `["catalogo", "pagos"]` contiene valores del mismo tipo y tiene longitud fija conocida en compilación. Un vector, `Vec<T>`, también contiene valores del mismo tipo, pero puede crecer o encogerse en ejecución. La figura 1.6 usa `vec!` porque la lista de servicios es una colección que conceptualmente puede cambiar de tamaño. En el proyecto real, la configuración se carga desde YAML y produce un `Vec<Servicio>` por la misma razón.
+Un arreglo como `["catalogo", "pagos"]` contiene valores del mismo tipo y tiene longitud fija conocida en compilación. Un vector, `Vec<T>`, también contiene valores del mismo tipo, pero puede crecer o encogerse en ejecución. La figura 1.7 usa `vec!` porque la lista de servicios es una colección que conceptualmente puede cambiar de tamaño. En el proyecto real, la configuración se carga desde YAML y produce un `Vec<Servicio>` por la misma razón.
 
 Las cadenas también requieren precisión. Un literal como `"catalogo"` suele ser `&str`, una vista prestada de texto ya existente. Un `String` es texto que posee memoria y puede crecer. En esta lección verás `&str` como valor de salida de etiquetas fijas; en la lección 2 estudiarás por qué no todos los textos se pueden copiar y por qué se distinguen ambos tipos. De momento, conserva esta regla: un texto fijo escrito en el código suele ser `&str`; texto leído, construido o almacenado suele acabar como `String`.
 
@@ -226,10 +226,10 @@ A diferencia de Go, Rust escribe el tipo después del nombre del parámetro, no 
 
 Una función pequeña no debe asumir trabajo que no le corresponde. `doble` recibe un número y devuelve otro; no imprime, no lee archivos y no modifica estado externo. Esa separación parece básica, pero prepara el terreno para el `revisor`: una función que clasifica milisegundos puede probarse con tres números sin iniciar un cliente HTTP ni abrir una configuración. Cuando el programa crezca, dividir la lógica en funciones con entradas y salidas claras será una forma de mantenerlo entendible.
 
-**Fig. 1.4** | Todo es una expresión.
+**Fig. 1.5** | Todo es una expresión.
 
 ```rust
-// fig01_04.rs
+// fig01_05.rs
 fn main() {
     let x = 7;
     let n = if x > 5 { "grande" } else { "chico" };      // el if DEVUELVE valor
@@ -248,7 +248,7 @@ fn doble(x: i32) -> i32 {
 ```
 
 ```bash
-$ rustc --edition 2024 fig01_04.rs && ./fig01_04
+$ rustc --edition 2024 fig01_05.rs && ./fig01_05
 grande 49 14
 ```
 
@@ -275,12 +275,12 @@ En Rust, muchas construcciones producen un valor. Una operación aritmética com
 
 Una sentencia realiza una acción pero no produce un valor útil. Una declaración `let x = 7;` es una sentencia. También lo es una expresión a la que agregas punto y coma. El valor de una sentencia es `()`, llamado tipo unidad. Puedes pensar en `()` como “no hay resultado que entregar”. No es un error ni un valor nulo: es un tipo real que aparece cuando una operación se usa solo por su efecto.
 
-El punto y coma determina esa diferencia en lugares importantes. En la figura 1.4, el bloque asignado a `cuadrado` termina con `t` sin punto y coma, por lo que el bloque produce el valor de `t`. La función `doble` termina con `x * 2` sin punto y coma, por lo que devuelve ese `i32`. Si agregas `;`, la operación se ejecuta y su resultado se descarta. Entonces el cuerpo de la función produce `()`, pero la firma exige `i32`.
+El punto y coma determina esa diferencia en lugares importantes. En la figura 1.5, el bloque asignado a `cuadrado` termina con `t` sin punto y coma, por lo que el bloque produce el valor de `t`. La función `doble` termina con `x * 2` sin punto y coma, por lo que devuelve ese `i32`. Si agregas `;`, la operación se ejecuta y su resultado se descarta. Entonces el cuerpo de la función produce `()`, pero la firma exige `i32`.
 
-**Fig. 1.5** | El punto y coma de más.
+**Fig. 1.6** | El punto y coma de más.
 
 ```rust
-// fig01_05.rs
+// fig01_06.rs
 fn doble(x: i32) -> i32 {
     x * 2;                     // ← el punto y coma de más
 }
@@ -291,9 +291,9 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig01_05.rs
+$ rustc --edition 2024 fig01_06.rs
 error[E0308]: mismatched types
- --> fig01_05.rs:2:21
+ --> fig01_06.rs:2:21
   |
 2 | fn doble(x: i32) -> i32 {
   |    -----            ^^^ expected `i32`, found `()`
@@ -311,7 +311,7 @@ Este error es desconcertante una vez y muy útil después. El compilador no est�
 
 El estilo de expresión hace que transformaciones pequeñas queden compactas y claras. Puedes calcular un valor intermedio en un bloque, conservar las variables locales dentro de ese bloque y entregar solo el resultado. Esto reduce ámbitos innecesarios y evita nombres temporales que siguen vivos cuando ya no significan nada. No conviertas cada línea en una expresión complicada: la legibilidad sigue siendo el criterio. Un bloque con dos o tres pasos bien nombrados suele ser más claro que una línea ingeniosa.
 
-En `revisor.rs`, la clasificación de una respuesta usa condiciones dentro de un `match`; el resultado de cada rama es un `Estado`. Aunque `match` se estudia a fondo en la lección 3, el patrón ya es familiar: cada camino produce el valor que la función prometió.
+En `revisar.rs`, la clasificación de una respuesta usa condiciones dentro de un `match`; el resultado de cada rama es un `Estado`. Aunque `match` se estudia a fondo en la lección 3, el patrón ya es familiar: cada camino produce el valor que la función prometió.
 
 <!-- verificar:extracto:src/revisar.rs -->
 ```rust
@@ -351,12 +351,12 @@ Cuando `if` se usa para elegir un valor, sus ramas deben devolver el mismo tipo.
 
 `while condicion` repite mientras la condición sea verdadera. Úsalo cuando el avance depende de un estado que controlas: decrementar una cuenta, leer hasta una condición o reintentar bajo una regla explícita. Asegúrate de que el cuerpo puede cambiar el estado que hace falsa la condición. Un `while` cuyo contador nunca se actualiza es un ciclo infinito disfrazado.
 
-`for` es la opción normal para recorrer una colección o un rango. Rust no tiene el estilo tradicional `for inicialización; condición; actualización` de C, Java o Go. En vez de ello, recorre algo que implementa `IntoIterator`: un rango como `0..10`, una lista, un arreglo o un iterador. Esta forma elimina gran parte del código de índices y reduce errores de límites.
+`for` es la opción normal para recorrer una colección o un rango. Rust no tiene el estilo tradicional `for inicialización; condición; actualización` de C, Java o Go. En vez de ello, recorre algo que sabe entregar sus elementos de uno en uno (en Rust, algo que implementa `IntoIterator`): un rango como `0..10`, una lista, un arreglo o un iterador. Esta forma elimina gran parte del código de índices y reduce errores de límites.
 
-**Fig. 1.6** | Los bucles.
+**Fig. 1.7** | Los bucles.
 
 ```rust
-// fig01_06.rs
+// fig01_07.rs
 fn main() {
     let mut x = 3;
     let servicios = vec!["catalogo", "pagos", "reportes"];
@@ -375,7 +375,7 @@ fn main() {
 ```
 
 ```bash
-$ rustc --edition 2024 fig01_06.rs && ./fig01_06
+$ rustc --edition 2024 fig01_07.rs && ./fig01_07
 0 1 2 3 4 5 6 7 8 9 
 0 1 2 3 4 5 6 7 8 9 10 
 catalogo
@@ -388,7 +388,7 @@ Los rangos son una fuente común de errores de límite. `0..10` incluye `0` y ex
 
 La línea `for s in &servicios` lleva una referencia a la lista. Eso permite leer cada elemento sin entregar la propiedad de `servicios`. La diferencia completa entre `servicios`, `&servicios` y `&mut servicios` es el tema de la lección 2, pero puedes adoptar desde hoy una regla provisional: si solo quieres mirar una colección y conservarla, recórrela por referencia. El compilador evitará usos inseguros cuando conozcas las reglas de préstamo.
 
-El `revisor` valida una lista con un `for`. La función no necesita saber cuántos servicios llegaron: los toma uno por uno. `enumerate()` agrega el índice para poder comparar el servicio actual con los anteriores. Aunque la expresión completa parece avanzada, su flujo es el mismo de la figura 1.6: recorrer, comprobar una condición y terminar con un resultado.
+El `revisor` valida una lista con un `for`. La función no necesita saber cuántos servicios llegaron: los toma uno por uno. `enumerate()` agrega el índice para poder comparar el servicio actual con los anteriores. Aunque la expresión completa parece avanzada, su flujo es el mismo de la figura 1.7: recorrer, comprobar una condición y terminar con un resultado.
 
 <!-- verificar:extracto:src/config.rs -->
 ```rust
@@ -425,17 +425,17 @@ Aquí `s.timeout_ms > 0` es una condición booleana como las que ya usaste. La d
 
 ### `E0308`: tipos que no coinciden
 
-`E0308` significa que Rust esperaba un tipo en un punto del programa y encontró otro. No es un mensaje vago: léelo como una frase con dos partes. Primero identifica el sitio donde se fijó la expectativa; luego identifica el valor que contradice esa expectativa. En la figura 1.2, la anotación `let b: i64` fija que `b` será `i64`; la variable `a` es `i32`; por eso la asignación falla.
+`E0308` significa que Rust esperaba un tipo en un punto del programa y encontró otro. No es un mensaje vago: léelo como una frase con dos partes. Primero identifica el sitio donde se fijó la expectativa; luego identifica el valor que contradice esa expectativa. En la figura 1.3, la anotación `let b: i64` fija que `b` será `i64`; la variable `a` es `i32`; por eso la asignación falla.
 
 La corrección no siempre será `as`. Para convertir de `i32` a `i64`, el ensanchamiento es seguro y `as i64` comunica la intención. Para convertir de un número grande a uno pequeño, o de un texto a un entero, debes decidir qué hacer cuando el valor no cabe o no tiene formato válido. Esas conversiones se tratarán con resultados que pueden fallar. La buena práctica es resolver la discrepancia en el límite entre dominios, no convertir valores repetidamente dentro de cada función.
 
-La figura 1.5 produce el mismo código `E0308`, pero por una causa distinta: la función declara `-> i32` y su último elemento es una sentencia cuyo valor es `()`. Esta diferencia ilustra por qué no debes resolver errores solo por el número. El código agrupa una familia de diagnósticos; las líneas señaladas y las palabras `expected` y `found` cuentan la historia concreta.
+La figura 1.6 produce el mismo código `E0308`, pero por una causa distinta: la función declara `-> i32` y su último elemento es una sentencia cuyo valor es `()`. Esta diferencia ilustra por qué no debes resolver errores solo por el número. El código agrupa una familia de diagnósticos; las líneas señaladas y las palabras `expected` y `found` cuentan la historia concreta.
 
 Cuando veas `expected i32, found ()`, haz estas preguntas: ¿la función prometió un retorno? ¿el último valor tiene punto y coma? ¿una rama de `if` no devuelve lo mismo que la otra? ¿puse `println!` como último elemento cuando necesitaba producir un valor? Con ese orden normalmente encuentras el problema sin buscar respuestas al azar.
 
 ### Leer una sugerencia sin obedecerla a ciegas
 
-Rust suele ofrecer una sección `help:`. Es una propuesta contextual, no una orden. En la figura 1.2 sugiere `a.into()`, que también puede convertir el valor porque existe una conversión conocida entre ambos tipos. La figura 1.3 conserva `as i64` porque es la forma que se quiere enseñar para una conversión numérica explícita y simple. En otros casos, la sugerencia puede ser `clone()`, agregar una referencia o cambiar una firma. Antes de aceptarla, pregúntate qué costo, propiedad o comportamiento está introduciendo.
+Rust suele ofrecer una sección `help:`. Es una propuesta contextual, no una orden. En la figura 1.3 sugiere `a.into()`, que también puede convertir el valor porque existe una conversión conocida entre ambos tipos. La figura 1.4 conserva `as i64` porque es la forma que se quiere enseñar para una conversión numérica explícita y simple. En otros casos, la sugerencia puede ser `clone()`, agregar una referencia o cambiar una firma. Antes de aceptarla, pregúntate qué costo, propiedad o comportamiento está introduciendo.
 
 El mensaje también termina con `rustc --explain E0308`. Ese comando abre una explicación general del código de error instalado con tu compilador. Úsalo cuando el diagnóstico local no baste, pero empieza por el archivo, la línea y las columnas que el compilador ya te mostró. Casi siempre contienen más información específica sobre tu programa que una búsqueda general.
 
@@ -525,7 +525,7 @@ fn sumar(valores: &[i32]) -> i32 {
 }
 ```
 
-`valores` recibe una referencia a un slice, por lo que la función observa los números sin quedarse con el vector del llamador. Dentro del `for`, `valor` es una referencia a cada `i32`; la suma funciona porque los enteros escalares se copian. La última expresión, `total`, entrega el resultado sin punto y coma.
+`valores` recibe una referencia a un slice, por lo que la función observa los números sin quedarse con el vector del llamador. Dentro del `for`, `valor` es una referencia a cada `i32`; la suma funciona porque `i32` implementa la suma con una referencia a otro `i32` (`total += valor`), sin que tengas que escribir `*valor`. La última expresión, `total`, entrega el resultado sin punto y coma.
 
 ### Solución 3
 
@@ -555,15 +555,15 @@ El sufijo `_u64` en el primer literal fija el tipo del arreglo. Los demás eleme
 ## Cómo sé que lo logré
 
 - Desde `programas/01-fundamentos`, `rustc --edition 2024 -D warnings fig01_01.rs && ./fig01_01` imprime `x = 5, y = 15, MAX = 100000` sin avisos.
-- `rustc --edition 2024 fig01_02.rs` falla con `error[E0308]`, y puedes señalar que `b` espera `i64` mientras `a` es `i32`.
-- `rustc --edition 2024 fig01_05.rs` falla con `error[E0308]`, y puedes explicar que el punto y coma hizo que la función devolviera `()`.
-- `rustc --edition 2024 -D warnings fig01_06.rs && ./fig01_06` imprime los dos rangos, los tres servicios y termina con `x = 0, r = 42`.
-- `rustc --edition 2024 -D warnings fig01_07.rs && ./fig01_07` imprime los tres resultados documentados y no reporta avisos.
+- `rustc --edition 2024 fig01_03.rs` falla con `error[E0308]`, y puedes señalar que `b` espera `i64` mientras `a` es `i32`.
+- `rustc --edition 2024 fig01_06.rs` falla con `error[E0308]`, y puedes explicar que el punto y coma hizo que la función devolviera `()`.
+- `rustc --edition 2024 -D warnings fig01_07.rs && ./fig01_07` imprime los dos rangos, los tres servicios y termina con `x = 0, r = 42`.
+- `rustc --edition 2024 -D warnings fig01_02.rs && ./fig01_02` imprime los tres resultados documentados y no reporta avisos.
 - Terminaste las secciones `variables`, `functions`, `if` y `primitive_types` de Rustlings, y puedes resolver los tres ejercicios sin copiar las soluciones.
 
 ## Para leer más
 
-- [The Rust Programming Language, capítulo 2: Programming a Guessing Game](https://doc.rust-lang.org/book/ch02-00-guessing-game-tutorial.html) — consulta: 2 de octubre de 2026.
-- [The Rust Programming Language, capítulo 3: Common Programming Concepts](https://doc.rust-lang.org/book/ch03-00-common-programming-concepts.html) — consulta: 2 de octubre de 2026.
-- [Documentación oficial de `i32` y de los tipos numéricos primitivos](https://doc.rust-lang.org/std/primitive.i32.html) — consulta: 2 de octubre de 2026.
-- [Rustlings](https://rustlings.rust-lang.org/) — completa `variables`, `functions`, `if` y `primitive_types`; consulta: 2 de octubre de 2026.
+- [The Rust Programming Language, capítulo 2: Programming a Guessing Game](https://doc.rust-lang.org/book/ch02-00-guessing-game-tutorial.html) — consultado el 2 de octubre de 2026.
+- [The Rust Programming Language, capítulo 3: Common Programming Concepts](https://doc.rust-lang.org/book/ch03-00-common-programming-concepts.html) — consultado el 2 de octubre de 2026.
+- [Documentación oficial de `i32` y de los tipos numéricos primitivos](https://doc.rust-lang.org/std/primitive.i32.html) — consultado el 2 de octubre de 2026.
+- [Rustlings](https://rustlings.rust-lang.org/) — completa `variables`, `functions`, `if` y `primitive_types`; consultado el 2 de octubre de 2026.

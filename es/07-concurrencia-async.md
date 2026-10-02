@@ -1,6 +1,6 @@
 # Lección 7 — Concurrencia y async
 
-**Tiempo:** 2 × 45 min
+**Tiempo:** 2 × 45 min.
 
 **Qué construyes:** el `revisor` concurrente: que revise todo a la vez
 
@@ -179,7 +179,7 @@ En el `revisor`, `join_all` cumple una función parecida a recibir todos los res
 
 Esta regla no es una lista para memorizar. Es una pregunta que Rust contesta por composición. Si haces un struct que contiene `Rc<RefCell<_>>`, hereda las restricciones de esas piezas. Si cambias a `Arc<Mutex<_>>`, cambias la representación y también las garantías disponibles. El compilador sigue el valor hasta la clausura que se manda a `thread::spawn` y exige que la frontera sea segura.
 
-En Go, una carrera de datos puede compilar y requerir `go test -race` para detectarse durante una ejecución que alcance justo la intercalación problemática. El detector es valioso y debes usarlo, pero depende de que la prueba ejecute el camino conflictivo. Rust evita las carreras de datos en código seguro antes de correr el programa. Eso no prueba que la lógica sea correcta ni detecta automáticamente interbloqueos, starvation o protocolos mal diseñados. También existe `unsafe`, donde el programador asume responsabilidades adicionales. La afirmación precisa es: Rust evita carreras de datos mediante sus reglas de tipos y préstamos en código seguro; no promete que todo programa concurrente sea correcto.
+En Go, una carrera de datos puede compilar y requerir `go test -race` para detectarse durante una ejecución que alcance justo la intercalación problemática. El detector es valioso y debes usarlo, pero depende de que la prueba ejecute el camino conflictivo. Rust evita las carreras de datos en código seguro antes de correr el programa. Eso no prueba que la lógica sea correcta ni detecta automáticamente interbloqueos, inanición (una tarea que nunca consigue turno porque otras acaparan el recurso) o protocolos mal diseñados. También existe `unsafe`, donde el programador asume responsabilidades adicionales. La afirmación precisa es: Rust evita carreras de datos mediante sus reglas de tipos y préstamos en código seguro; no promete que todo programa concurrente sea correcto.
 
 Dentro del `revisor`, `Arc<Semaphore>` es válido porque el semáforo de Tokio está diseñado para compartirse entre tareas. Cada futuro recibe su propio `Arc`, pide un permiso y conserva ese permiso durante la solicitud. El tipo del permiso y su ciclo de vida expresan que el turno no puede devolverse antes de terminar la consulta. No hay un contador `usize` compartido que cada futuro incremente y decremente manualmente.
 
@@ -202,7 +202,7 @@ async fn main() -> ExitCode {
 async fn ejecutar(args: &Args) -> ExitCode {
 ```
 
-El atributo `#[tokio::main]` construye el runtime y ejecuta la función `main` async. El `main` del programa sigue devolviendo un `ExitCode`, como aprendiste en la lección 6; lo que cambia es que ahora puede esperar operaciones async antes de decidir el código de salida. El binario conserva la responsabilidad de parsear argumentos, imprimir y salir; la biblioteca conserva la lógica de consultar servicios.
+El atributo `#[tokio::main]` construye el runtime y ejecuta la función `main` async. El `main` del programa sigue devolviendo un `ExitCode`, como viste en la lección 4; lo que cambia es que ahora puede esperar operaciones async antes de decidir el código de salida. El binario conserva la responsabilidad de parsear argumentos, imprimir y salir; la biblioteca conserva la lógica de consultar servicios.
 
 No bloquees un hilo del runtime con `std::thread::sleep`, lectura de archivos pesada o cálculo largo dentro de una función async. Un hilo bloqueado no puede sondear otros futuros asignados a él. Para trabajo bloqueante existe `tokio::task::spawn_blocking`; para E/S de red, usa APIs async como `reqwest`. El `revisor` usa `reqwest::Client` y espera su `send().await`, por lo que mientras una respuesta está pendiente el runtime puede avanzar consultas de otros servicios.
 
@@ -226,7 +226,7 @@ async fn revisar(nombre: &str, espera_ms: u64) -> String {
 
 #[tokio::main]
 async fn main() {
-    let servicios = [("catalogo", 300), ("pagos", 100), ("usuarios", 200)];
+    let servicios = [("catalogo", 600), ("pagos", 200), ("usuarios", 400)];
     let inicio = Instant::now();
 
     let futuros = servicios.iter().map(|(nombre, ms)| revisar(nombre, *ms));
@@ -236,8 +236,8 @@ async fn main() {
     for resultado in &resultados {
         println!("{resultado}");
     }
-    // Esperarlos uno tras otro habría tardado 600 ms; a la vez tardan lo del más lento.
-    let a_la_vez = inicio.elapsed() < Duration::from_millis(550);
+    // Esperarlos uno tras otro habría tardado 1200 ms; a la vez tardan lo del más lento.
+    let a_la_vez = inicio.elapsed() < Duration::from_millis(1100);
     println!("tardó menos que la suma de las esperas: {a_la_vez}");
 }
 ```
@@ -248,9 +248,9 @@ terminó pagos
 terminó usuarios
 terminó catalogo
 --- en el orden de la lista ---
-catalogo: respondió tras 300 ms
-pagos: respondió tras 100 ms
-usuarios: respondió tras 200 ms
+catalogo: respondió tras 600 ms
+pagos: respondió tras 200 ms
+usuarios: respondió tras 400 ms
 tardó menos que la suma de las esperas: true
 ```
 
@@ -258,7 +258,7 @@ Ejecútalo desde `programas/revisor/` (en la primera corrida Cargo tarda un rato
 
 `#[tokio::main]` convierte `main` en una función async: construye el runtime y le entrega el futuro que `main` describe. `tokio::time::sleep` es la espera de Tokio, y se parece a `std::thread::sleep` en lo que hace pero no en cómo: con `.await`, la tarea cede el control al runtime mientras espera, y el runtime aprovecha para avanzar las demás. Con `std::thread::sleep` el hilo entero se quedaría dormido y nada más avanzaría en él.
 
-Lee la salida en dos partes. Los mensajes `terminó ...` salen en el orden en que cada espera se cumple: `pagos` (100 ms), `usuarios` (200 ms) y `catalogo` (300 ms), aunque la lista los declare en otro orden. Después, `join_all` entrega los resultados en el orden de la lista —`catalogo`, `pagos`, `usuarios`—, porque devuelve un `Vec` donde cada posición corresponde a su futuro de entrada. La última línea comprueba que fue concurrente: esperar las tres revisiones una tras otra habría tomado 600 ms, y a la vez toma lo que tarda la más lenta, unos 300 ms.
+Lee la salida en dos partes. Los mensajes `terminó ...` salen en el orden en que cada espera se cumple: `pagos` (200 ms), `usuarios` (400 ms) y `catalogo` (600 ms), aunque la lista los declare en otro orden. Después, `join_all` entrega los resultados en el orden de la lista —`catalogo`, `pagos`, `usuarios`—, porque devuelve un `Vec` donde cada posición corresponde a su futuro de entrada. La última línea comprueba que fue concurrente: esperar las tres revisiones una tras otra habría tomado 1200 ms, y a la vez toma lo que tarda la más lenta, unos 600 ms.
 
 Si cambias `sleep` por una llamada de red con `.send().await`, tienes la forma del `revisor`: muchos futuros que esperan, un solo `join_all` que los conduce y un `Vec` de resultados alineado con la lista de servicios.
 
@@ -266,7 +266,7 @@ Si cambias `sleep` por una llamada de red con `.send().await`, tienes la forma d
 
 Lanzar todas las solicitudes posibles al mismo tiempo no siempre es una mejora. Un archivo con miles de servicios podría abrir demasiadas conexiones, saturar la red local, agotar descriptores de archivo o cargar al servidor que justamente intentas revisar. La concurrencia necesita un límite. El argumento `--paralelo` del `revisor` expresa cuántas consultas pueden estar activas a la vez.
 
-Un semáforo contiene permisos. Para empezar una consulta, un futuro adquiere uno; si no quedan, espera. Cuando el permiso sale de alcance, se libera automáticamente y otro futuro puede continuar. Es la misma idea de RAII que viste con `MutexGuard`: el recurso se libera al destruir el guard, incluso si la función sale por un camino normal. Aquí el recurso no es un candado exclusivo sino una capacidad limitada.
+Un semáforo contiene permisos. Para empezar una consulta, un futuro adquiere uno; si no quedan, espera. Cuando el permiso sale de alcance, se libera automáticamente y otro futuro puede continuar. Es la misma idea de RAII (el recurso se libera cuando el valor que lo representa sale de alcance) que viste con `MutexGuard`: el recurso se libera al destruir el guard, incluso si la función sale por un camino normal. Aquí el recurso no es un candado exclusivo sino una capacidad limitada.
 
 <!-- verificar:extracto:src/revisar.rs -->
 ```rust
@@ -357,7 +357,7 @@ For more information about this error, try `rustc --explain E0277`.
 
 El mensaje contiene la respuesta. La clausura captura `Rc<i32>`, `thread::spawn` exige que lo capturado sea `Send`, y `Rc<i32>` no implementa `Send`. No arregles este error añadiendo traits manualmente con `unsafe impl Send`; estarías prometiendo al compilador una seguridad que `Rc` no ofrece. Si varios hilos solo deben leer un dato, usa `Arc<T>`. Si además deben modificarlo, evalúa `Arc<Mutex<T>>` o rediseña el flujo para enviar valores por canales.
 
-También reconoce el error de diseño que no produce `E0277`: mantener un `MutexGuard` durante una operación `.await`. Un guard de `std::sync::Mutex` bloquea un hilo; un guard de un mutex async conserva el candado mientras la tarea puede ceder el ejecutor. En ambos casos, esperar red mientras tienes el candado suele bloquear trabajo innecesariamente y puede producir interbloqueos. Extrae o actualiza el dato bajo el candado, suelta el guard y solo entonces espera.
+También reconoce el error de diseño que a veces el compilador no rechaza: mantener un `MutexGuard` durante una operación `.await`. Si lanzas la tarea con `tokio::spawn` y el guard es de `std::sync::Mutex`, `rustc` sí la rechaza (`future cannot be sent between threads safely`, porque ese guard no es `Send`); pero si el futuro se espera en el mismo hilo, como hace `join_all` en el `revisor`, el programa compila. Para ese caso `clippy` trae por omisión el aviso `await_holding_lock`. Un guard de `std::sync::Mutex` bloquea un hilo; un guard de un mutex async conserva el candado mientras la tarea puede ceder el ejecutor. En ambos casos, esperar red mientras tienes el candado suele bloquear trabajo innecesariamente y puede producir interbloqueos. Extrae o actualiza el dato bajo el candado, suelta el guard y solo entonces espera.
 
 ## Lo que se hace mal
 
@@ -456,10 +456,10 @@ cargo fmt --check
 
 ## Para leer más
 
-- [The Rust Programming Language, capítulo 16: Fearless Concurrency](https://doc.rust-lang.org/book/ch16-00-concurrency.html) — consulta: 2 de octubre de 2026.
+- [The Rust Programming Language, capítulo 16: Fearless Concurrency](https://doc.rust-lang.org/book/ch16-00-concurrency.html) — consultado el 2 de octubre de 2026.
 
-- [The Rust Programming Language, capítulo 17: Fundamentals of Asynchronous Programming](https://doc.rust-lang.org/book/ch17-00-async-await.html) — consulta: 2 de octubre de 2026.
+- [The Rust Programming Language, capítulo 17: Fundamentals of Asynchronous Programming](https://doc.rust-lang.org/book/ch17-00-async-await.html) — consultado el 2 de octubre de 2026.
 
-- [Documentación de `std::thread`](https://doc.rust-lang.org/std/thread/) — consulta: 2 de octubre de 2026.
+- [Documentación de `std::thread`](https://doc.rust-lang.org/std/thread/) — consultado el 2 de octubre de 2026.
 
-- [Documentación de `tokio::sync::Semaphore`](https://docs.rs/tokio/latest/tokio/sync/struct.Semaphore.html) — consulta: 2 de octubre de 2026.
+- [Documentación de `tokio::sync::Semaphore`](https://docs.rs/tokio/latest/tokio/sync/struct.Semaphore.html) — consultado el 2 de octubre de 2026.

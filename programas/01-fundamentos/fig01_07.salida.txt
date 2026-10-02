@@ -1,3 +1,6 @@
-espacios = 3
-codigo = 200, ms = 750, saludable = true
-primer servicio = catalogo
+0 1 2 3 4 5 6 7 8 9 
+0 1 2 3 4 5 6 7 8 9 10 
+catalogo
+pagos
+reportes
+x = 0, r = 42
