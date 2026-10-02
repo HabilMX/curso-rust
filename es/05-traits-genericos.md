@@ -6,19 +6,70 @@
 
 ## Traits
 
-    trait Revisor {
-        fn revisar(&self, s: &Servicio) -> Estado;
+**Fig. 5.1** | Un trait con método por omisión, y dos tipos que lo cumplen.
 
-        fn nombre(&self) -> String {          // 🔑 los traits pueden traer implementación por omisión
-            "revisor".to_string()
+```rust
+// fig05_01.rs
+use std::fmt;
+
+struct Servicio {
+    nombre: String,
+}
+
+enum Estado {
+    Ok { ms: u64 },
+    Falla(String),
+}
+
+impl fmt::Display for Estado {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Estado::Ok { ms } => write!(f, "OK en {ms}ms"),
+            Estado::Falla(motivo) => write!(f, "FALLA: {motivo}"),
         }
     }
+}
 
-    struct RevisorHttp { timeout_ms: u64 }
+trait Revisor {
+    fn revisar(&self, s: &Servicio) -> Estado;
 
-    impl Revisor for RevisorHttp {            // 🔴 aquí está la diferencia: es EXPLÍCITO
-        fn revisar(&self, s: &Servicio) -> Estado { /* ... */ }
+    fn nombre(&self) -> String {          // 🔑 los traits pueden traer implementación por omisión
+        "revisor".to_string()
     }
+}
+
+struct RevisorHttp { timeout_ms: u64 }
+
+impl Revisor for RevisorHttp {            // 🔴 aquí está la diferencia: es EXPLÍCITO
+    fn revisar(&self, s: &Servicio) -> Estado {
+        Estado::Falla(format!("{}: sin red en este ejemplo (límite {} ms)", s.nombre, self.timeout_ms))
+    }
+}
+
+struct RevisorFalso;
+
+impl Revisor for RevisorFalso {
+    fn revisar(&self, _s: &Servicio) -> Estado {
+        Estado::Ok { ms: 1 }
+    }
+    fn nombre(&self) -> String {
+        "falso".to_string()
+    }
+}
+
+fn main() {
+    let s = Servicio { nombre: "catalogo".to_string() };
+    let http = RevisorHttp { timeout_ms: 2000 };
+    println!("{} -> {}", http.nombre(), http.revisar(&s));
+    println!("{} -> {}", RevisorFalso.nombre(), RevisorFalso.revisar(&s));
+}
+```
+
+```bash
+$ rustc --edition 2024 fig05_01.rs && ./fig05_01
+revisor -> FALLA: catalogo: sin red en este ejemplo (límite 2000 ms)
+falso -> OK en 1ms
+```
 
 | | Go | Rust |
 |---|---|---|
@@ -31,11 +82,62 @@ imposible, y al leer el código sabes exactamente qué contratos cumple un tipo.
 
 ## Genéricos, con restricciones
 
-    fn revisar_todos<R: Revisor>(r: &R, servicios: &[Servicio]) -> Vec<Estado> {
-        servicios.iter().map(|s| r.revisar(s)).collect()
-    }
+**Fig. 5.2** | Una función genérica con restricciones.
 
-    fn imprimir<T: std::fmt::Display + Clone>(x: T) { }      // varias restricciones
+```rust
+// fig05_02.rs
+use std::fmt;
+
+struct Servicio {
+    nombre: String,
+}
+
+enum Estado {
+    Ok { ms: u64 },
+}
+
+impl fmt::Display for Estado {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Estado::Ok { ms } => write!(f, "OK en {ms}ms"),
+        }
+    }
+}
+
+trait Revisor {
+    fn revisar(&self, s: &Servicio) -> Estado;
+}
+
+struct RevisorFalso;
+
+impl Revisor for RevisorFalso {
+    fn revisar(&self, s: &Servicio) -> Estado {
+        Estado::Ok { ms: s.nombre.len() as u64 }
+    }
+}
+
+fn revisar_todos<R: Revisor>(r: &R, servicios: &[Servicio]) -> Vec<Estado> {
+    servicios.iter().map(|s| r.revisar(s)).collect()
+}
+
+fn imprimir<T: std::fmt::Display + Clone>(x: T) { println!("{x}"); }      // varias restricciones
+
+fn main() {
+    let servicios = vec![
+        Servicio { nombre: "catalogo".to_string() },
+        Servicio { nombre: "pagos".to_string() },
+    ];
+    for estado in revisar_todos(&RevisorFalso, &servicios) {
+        imprimir(estado.to_string());
+    }
+}
+```
+
+```bash
+$ rustc --edition 2024 fig05_02.rs && ./fig05_02
+OK en 8ms
+OK en 5ms
+```
 
 🔑 **`<R: Revisor>` se resuelve en compilación** (monomorfización): el compilador genera una versión por
 cada tipo concreto. Sin costo en ejecución. Cuando necesitas decidir en tiempo de ejecución, se usa
@@ -43,15 +145,32 @@ cada tipo concreto. Sin costo en ejecución. Cuando necesitas decidir en tiempo 
 
 ## Lifetimes: el `'a` que asusta y no es para tanto
 
-    fn primera<'a>(s: &'a str) -> &'a str { }
+<!-- verificar:fragmento -->
+```rust
+fn primera<'a>(s: &'a str) -> &'a str { }
+```
 
 **No es magia ni gestión de memoria manual.** Es una anotación que dice: *«el valor que devuelvo vive
 tanto como el que recibí»*. El compilador lo necesita cuando devuelves una referencia y hay más de una
 entrada posible:
 
-    fn mas_largo<'a>(a: &'a str, b: &'a str) -> &'a str {
-        if a.len() > b.len() { a } else { b }
-    }
+**Fig. 5.3** | Un lifetime que une la salida con las dos entradas.
+
+```rust
+// fig05_03.rs
+fn mas_largo<'a>(a: &'a str, b: &'a str) -> &'a str {
+    if a.len() > b.len() { a } else { b }
+}
+
+fn main() {
+    println!("{}", mas_largo("catalogo", "pagos"));
+}
+```
+
+```bash
+$ rustc --edition 2024 fig05_03.rs && ./fig05_03
+catalogo
+```
 
 Sin el `'a`, el compilador no puede saber si el resultado apunta a `a` o a `b`, y por tanto no sabe
 cuánto debe vivir.

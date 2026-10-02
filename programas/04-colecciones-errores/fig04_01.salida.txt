@@ -1,0 +1,6 @@
+catalogo
+true
+Some(Ok)
+None
+Falla
+Some(2)

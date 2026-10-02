@@ -1,0 +1,4 @@
+OK 200 en 120ms
+LENTO 1800ms
+FALLA: no responde
+sin revisar

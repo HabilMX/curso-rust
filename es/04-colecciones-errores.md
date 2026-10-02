@@ -4,16 +4,53 @@
 
 ## Las tres colecciones
 
+**Fig. 4.1** | Las colecciones y su acceso seguro.
+
+```rust
+// fig04_01.rs
+use std::collections::HashMap;
+
+struct Servicio {
+    nombre: String,
+}
+
+#[derive(Debug)]
+enum Estado {
+    Ok,
+    Falla,
+}
+
+fn main() {
+    let s = Servicio { nombre: "catalogo".to_string() };
     let mut v: Vec<Servicio> = Vec::new();
     v.push(s);
     let primero = &v[0];                    // 🔴 si no existe: PANIC
+    println!("{}", primero.nombre);
     let primero = v.get(0);                 // devuelve Option<&Servicio> ← lo seguro
+    println!("{}", primero.is_some());
 
-    use std::collections::HashMap;
     let mut m: HashMap<String, Estado> = HashMap::new();
-    m.insert("catalogo".to_string(), estado);
-    m.get("pagos")                          // Option<&Estado>: no hay valor cero silencioso
-    *m.entry("reportes".into()).or_insert(0) += 1;   // el patrón para contar
+    m.insert("catalogo".to_string(), Estado::Ok);
+    println!("{:?}", m.get("catalogo"));
+    println!("{:?}", m.get("pagos"));       // Option<&Estado>: no hay valor cero silencioso
+    println!("{:?}", Estado::Falla);
+
+    let mut conteo: HashMap<String, u32> = HashMap::new();
+    *conteo.entry("reportes".into()).or_insert(0) += 1;   // el patrón para contar
+    *conteo.entry("reportes".into()).or_insert(0) += 1;
+    println!("{:?}", conteo.get("reportes"));
+}
+```
+
+```bash
+$ rustc --edition 2024 fig04_01.rs && ./fig04_01
+catalogo
+true
+Some(Ok)
+None
+Falla
+Some(2)
+```
 
 ⚠️ **Diferencia con Go que importa:** en Go, leer una llave que no existe **devuelve el valor cero** y
 sigue como si nada. En Rust devuelve `Option` y tienes que decidir. El mismo descuido, dos desenlaces.
@@ -25,28 +62,72 @@ sigue como si nada. En Rust devuelve `Option` y tienes que decidir. El mismo des
 | `String` | **dueña**, en el heap, crece | cuando lo guardas en un struct |
 | `&str` | **vista prestada**, no crece | **parámetros de función** |
 
-    fn saludar(n: &str) { }         // ✅ acepta los dos: &String se convierte solo
-    fn saludar(n: String) { }       // ❌ obliga a quien llama a entregar la propiedad
+**Fig. 4.2** | Recibe `&str`, acepta los dos.
+
+```rust
+// fig04_02.rs
+fn saludar(n: &str) { println!("hola, {n}"); }         // ✅ acepta los dos: &String se convierte solo
+
+fn main() {
+    let propio = String::from("catalogo");
+    saludar("pagos");
+    saludar(&propio);
+}
+```
+
+```bash
+$ rustc --edition 2024 fig04_02.rs && ./fig04_02
+hola, pagos
+hola, catalogo
+```
+
+<!-- verificar:fragmento -->
+```rust
+fn saludar(n: String) { }       // ❌ obliga a quien llama a entregar la propiedad
+```
 
 🔑 **La regla:** **recibe `&str`, guarda `String`.** Es el equivalente rústico de «acepta interfaces,
 devuelve structs».
 
 ## `Result` y el operador `?`
 
-    enum Result<T, E> { Ok(T), Err(E) }        // en el estándar
+<!-- verificar:fragmento -->
+```rust
+enum Result<T, E> { Ok(T), Err(E) }        // en el estándar
+```
 
-    fn leer_config(ruta: &str) -> Result<String, std::io::Error> {
-        let contenido = std::fs::read_to_string(ruta)?;   // 🔑 si falla, RETORNA el error
-        Ok(contenido)
+**Fig. 4.3** | El operador `?` devuelve el error al llamador.
+
+```rust
+// fig04_03.rs
+fn leer_config(ruta: &str) -> Result<String, std::io::Error> {
+    let contenido = std::fs::read_to_string(ruta)?;   // 🔑 si falla, RETORNA el error
+    Ok(contenido)
+}
+
+fn main() {
+    match leer_config("servicios-que-no-existe.txt") {
+        Ok(texto) => println!("{texto}"),
+        Err(e) => println!("error: {e}"),
     }
+}
+```
+
+```bash
+$ rustc --edition 2024 fig04_03.rs && ./fig04_03
+error: No such file or directory (os error 2)
+```
 
 🔑 **El `?` es la respuesta de Rust al `if err != nil` de Go.** Una sola letra: si es `Ok`, saca el
 valor; si es `Err`, lo devuelve al llamador. Esto:
 
-    let a = paso1()?;
-    let b = paso2(a)?;
-    let c = paso3(b)?;
-    Ok(c)
+<!-- verificar:fragmento -->
+```rust
+let a = paso1()?;
+let b = paso2(a)?;
+let c = paso3(b)?;
+Ok(c)
+```
 
 en Go serían doce líneas. **Es la comparación más honesta entre los dos lenguajes**, y no hay ganador
 claro: Go es más explícito sobre dónde puede fallar, Rust es mucho más corto y también obligatorio.
@@ -69,15 +150,20 @@ si vas a arriesgarte, usa `expect` y explica por qué creías que no podía fall
 Al combinar `std::io::Error` con errores de HTTP y de YAML, los tipos dejan de cuadrar. La solución de la
 comunidad, y es casi universal:
 
-    cargo add anyhow        # para APLICACIONES: un error que acepta cualquiera
-    cargo add thiserror     # para BIBLIOTECAS: define tus propios tipos de error
+```bash
+cargo add anyhow        # para APLICACIONES: un error que acepta cualquiera
+cargo add thiserror     # para BIBLIOTECAS: define tus propios tipos de error
+```
 
-    use anyhow::{Context, Result};
-    fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
-        let txt = std::fs::read_to_string(ruta)
-            .with_context(|| format!("leyendo {ruta}"))?;    // agrega contexto, como el %w de Go
-        Ok(serde_yaml::from_str(&txt)?)
-    }
+<!-- verificar:extracto:src/config.rs -->
+```rust
+use anyhow::{Context, Result};
+pub fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
+    // with_context agrega a qué archivo se refería el error, como el %w de Go
+    let txt = std::fs::read_to_string(ruta).with_context(|| format!("leyendo {ruta}"))?;
+    Ok(serde_yaml::from_str(&txt)?)
+}
+```
 
 ## El ejercicio de la semana
 

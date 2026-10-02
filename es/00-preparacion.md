@@ -117,17 +117,29 @@ dice mucho de la herramienta: asume que vas a hacer las cosas bien y te lo deja 
 
 Abre `src/main.rs`:
 
+**Fig. 0.1** | El primer programa.
+
 ```rust
+// fig00_01.rs
 fn main() {
     println!("hola, ya tengo Rust");
 }
 ```
 
-Y córrelo:
+```bash
+$ rustc --edition 2024 fig00_01.rs && ./fig00_01
+hola, ya tengo Rust
+```
+
+Y córrelo con cargo:
 
 ```bash
 cargo run
 ```
+
+Cada programa de este curso también se puede compilar suelto, sin proyecto, con `rustc`: el primer comando de
+la figura de arriba lo hace, y `--edition 2024` pide la edición actual del lenguaje. Así es como se comprueba
+cada figura del curso, y la salida que ves ahí es la real.
 
 Verás que compila y luego ejecuta. **Fíjate en el `!` de `println!`**: no es un error de escritura. En
 Rust, lo que termina en `!` es una **macro**, no una función normal. Una macro es código que genera código
@@ -165,7 +177,10 @@ extra, así que el programa corre **mucho** más lento. Si algún día mides vel
 
 Escribe esto en `src/main.rs`:
 
+**Fig. 0.2** | Un programa que no compila.
+
 ```rust
+// fig00_02.rs
 fn main() {
     let x = 5;
     x = 6;
@@ -173,29 +188,58 @@ fn main() {
 }
 ```
 
-Y corre `cargo run`. **No compila:**
-
-```
+```bash
+$ rustc --edition 2024 fig00_02.rs
 error[E0384]: cannot assign twice to immutable variable `x`
- --> src/main.rs:3:5
+ --> fig00_02.rs:4:5
   |
-2 |     let x = 5;
+3 |     let x = 5;
   |         - first assignment to `x`
-3 |     x = 6;
+4 |     x = 6;
   |     ^^^^^ cannot assign twice to immutable variable
   |
 help: consider making this binding mutable
   |
-2 |     let mut x = 5;
+3 |     let mut x = 5;
   |         +++
+
+warning: value assigned to `x` is never read
+ --> fig00_02.rs:3:13
+  |
+3 |     let x = 5;
+  |             ^ this value is reassigned later and never used
+4 |     x = 6;
+  |     ----- `x` is overwritten here before the previous value is read
+  |
+  = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+error: aborting due to 1 previous error; 1 warning emitted
+
+For more information about this error, try `rustc --explain E0384`.
 ```
+
+Y corre `cargo run` (o `rustc`, como en la figura). **No compila:** el mensaje es el mismo, solo cambia la ruta
+del archivo que nombra.
 
 **En Rust, todo es inmutable por omisión.** Una variable, una vez que tiene valor, no cambia — a menos
 que pidas permiso explícitamente:
 
+**Fig. 0.3** | La misma variable, ahora mutable.
+
 ```rust
-let mut x = 5;      // mut = mutable
-x = 6;              // ahora sí
+// fig00_03.rs
+fn main() {
+    let mut x = 5;      // mut = mutable
+    println!("{x}");
+    x = 6;              // ahora sí
+    println!("{x}");
+}
+```
+
+```bash
+$ rustc --edition 2024 fig00_03.rs && ./fig00_03
+5
+6
 ```
 
 **¿Por qué?** Porque la mayoría de las variables de un programa real **nunca deberían cambiar**, y cuando
@@ -208,8 +252,8 @@ mueve y qué no.
 Vuelve a mirar ese mensaje de error. Te dijo:
 
 1. **Qué** pasó: no puedes asignar dos veces a una variable inmutable.
-2. **Dónde** empezó el problema: la línea 2, donde la creaste.
-3. **Dónde** truena: la línea 3.
+2. **Dónde** empezó el problema: la línea 3, donde la creaste (la línea 1 de la figura es su nombre).
+3. **Dónde** truena: la línea 4.
 4. **Cómo arreglarlo**: `consider making this binding mutable`, y te muestra exactamente qué escribir.
 
 **Casi ningún compilador del mundo hace esto.** El de Rust es famoso por ello, y tiene una consecuencia

@@ -1,0 +1,25 @@
+[package]
+name = "revisor"
+version = "0.1.0"
+edition = "2024"
+description = "El revisor del curso de Rust: consulta una lista de servicios a la vez y reporta cuáles responden."
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive"] }
+futures = "0.3.34"
+reqwest = { version = "0.13.5", features = ["json"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+serde_yaml = "0.9.34"
+tokio = { version = "1.53.1", features = ["full"] }
+
+[profile.release]
+strip = true              # quita símbolos
+opt-level = "z"           # optimiza para tamaño
+lto = true                # optimización entre módulos
+codegen-units = 1
+panic = "abort"           # sin desenrollado de pila
+
+[dev-dependencies]
+serde_json = "1.0.151"

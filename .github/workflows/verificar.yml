@@ -1,0 +1,52 @@
+name: Verificar programas
+
+# Cada programa del curso se compila y se ejecuta en cada cambio. Esta corrida
+# es pública: cualquiera puede abrirla y ver el resultado de cada paso.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Comprobar que las herramientas detectan lo que deben detectar
+        run: |
+          herramientas/verificar-programas.sh --probar
+          herramientas/verificar-extractos.sh --probar
+
+      - name: Compilar y ejecutar los programas de las lecciones 0 a 7
+        run: herramientas/verificar-programas.sh
+
+      - name: Comparar los extractos con el código real y revisar que cada bloque esté declarado
+        run: herramientas/verificar-extractos.sh
+
+      - name: Comprobar que programas/ coincide con las lecciones
+        run: herramientas/generar-programas.sh --comprobar
+
+      - name: Pruebas del proyecto real (programas/revisor)
+        working-directory: programas/revisor
+        run: cargo test
+
+      - name: Clippy del proyecto real, sin un solo aviso
+        working-directory: programas/revisor
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Formato del proyecto real
+        working-directory: programas/revisor
+        run: cargo fmt --check
+
+      - name: Revisar que no haya material que no debe publicarse
+        run: ./verificar-publicable.sh

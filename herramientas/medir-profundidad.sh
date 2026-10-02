@@ -3,7 +3,7 @@
 # sea reproducible y no una discusión. Quien revisa y quien escribe corren el
 # MISMO comando y obtienen el MISMO número.
 #
-# Uso:  ./medir-profundidad.sh [carpeta]     (por omisión: es)
+# Uso:  herramientas/medir-profundidad.sh [carpeta]     (por omisión: es)
 #
 # Qué cuenta como «línea de explicación»: una línea NO vacía que está FUERA de
 # un bloque de código cercado con ```. Se define aquí a propósito: sin una
@@ -33,7 +33,7 @@
 # Las dos se pueden cambiar por variable de entorno, pero **se cambian a la vista
 # y se dice por qué**, no en silencio.
 set -uo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 DIR="${1:-es}"
 PISO="${PISO:-150}"

@@ -4,20 +4,25 @@
 
 ## Módulos
 
-    src/
-      main.rs            → el binario
-      lib.rs             → la biblioteca (lo que otros podrían importar)
-      servicio.rs
-      revisar/
-        mod.rs           → declara el módulo
-        http.rs
+```text
+src/
+  main.rs            → el binario
+  lib.rs             → la biblioteca (lo que otros podrían importar)
+  servicio.rs
+  revisar/
+    mod.rs           → declara el módulo
+    http.rs
+```
 
-    // en lib.rs
-    pub mod servicio;
-    pub mod revisar;
+<!-- verificar:fragmento -->
+```rust
+// en lib.rs
+pub mod servicio;
+pub mod revisar;
 
-    // usar
-    use crate::servicio::Servicio;
+// usar
+use crate::servicio::Servicio;
+```
 
 🔑 **En Rust todo es privado por omisión**, incluso entre módulos del mismo proyecto, y se abre con `pub`.
 En Go la regla es la mayúscula inicial y solo aplica entre paquetes. Rust es más granular: hay `pub`,
@@ -28,44 +33,89 @@ binario solo parsea argumentos y llama. Así la lógica es testeable desde fuera
 
 ## Pruebas: en el mismo archivo
 
-    #[cfg(test)]                       // 🔑 solo se compila al hacer cargo test
-    mod tests {
-        use super::*;
+**Fig. 6.1** | Pruebas en el mismo archivo.
 
-        #[test]
-        fn estado_ok_con_200() {
-            let e = Estado::Ok { codigo: 200, ms: 100 };
-            assert!(matches!(e, Estado::Ok { .. }));
-        }
+```rust
+// fig06_01.rs
+enum Estado {
+    Ok { codigo: u16, ms: u64 },
+    Falla(String),
+}
 
-        #[test]
-        fn falla_sin_codigo() {
-            assert_eq!(resumen(&Estado::Falla("x".into())), "FALLA: x");
-        }
-
-        #[test]
-        #[should_panic(expected = "dividir por cero")]
-        fn panico_esperado() { /* ... */ }
+fn resumen(e: &Estado) -> String {
+    match e {
+        Estado::Ok { codigo, ms } => format!("OK {codigo} en {ms}ms"),
+        Estado::Falla(msg) => format!("FALLA: {msg}"),
     }
+}
+
+fn dividir(a: i32, b: i32) -> i32 {
+    if b == 0 {
+        panic!("dividir por cero");
+    }
+    a / b
+}
+
+fn main() {
+    println!("{}", resumen(&Estado::Ok { codigo: 200, ms: 100 }));
+    println!("{}", dividir(10, 2));
+}
+
+#[cfg(test)]                       // 🔑 solo se compila al hacer cargo test
+mod tests {
+    use super::*;
+
+    #[test]
+    fn estado_ok_con_200() {
+        let e = Estado::Ok { codigo: 200, ms: 100 };
+        assert!(matches!(e, Estado::Ok { .. }));
+    }
+
+    #[test]
+    fn falla_sin_codigo() {
+        assert_eq!(resumen(&Estado::Falla("x".into())), "FALLA: x");
+    }
+
+    #[test]
+    #[should_panic(expected = "dividir por cero")]
+    fn panico_esperado() {
+        dividir(1, 0);
+    }
+}
+```
+
+```bash
+$ rustc --edition 2024 --test fig06_01.rs && ./fig06_01 --test-threads=1
+running 3 tests
+test tests::estado_ok_con_200 ... ok
+test tests::falla_sin_codigo ... ok
+test tests::panico_esperado - should panic ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
 
 **Aquí sí hay aserciones**, al contrario que Go: `assert!`, `assert_eq!`, `assert_ne!`, y `matches!` para
 enums. Y cuando `assert_eq!` falla, imprime **los dos valores** sin que tengas que escribir el mensaje.
 
 ### Pruebas de integración, en su carpeta
 
-    tests/integracion.rs          # cada archivo es un binario aparte, solo ve la API pública
+```text
+tests/integracion.rs          # cada archivo es un binario aparte, solo ve la API pública
+```
 
 **Eso obliga a que tu biblioteca tenga una API usable**, que es media batalla del diseño.
 
 ## Los comandos
 
-    cargo test                       # todas
-    cargo test estado_ok             # las que coincidan
-    cargo test -- --nocapture        # deja ver los println!
-    cargo test --release             # con optimizaciones
-    cargo clippy -- -D warnings      # 🔑 el linter, fallando en cada aviso
-    cargo fmt --check                # verifica formato sin cambiar (para CI)
-    cargo doc --open                 # genera la documentación y la abre
+```bash
+cargo test                       # todas
+cargo test estado_ok             # las que coincidan
+cargo test -- --nocapture        # deja ver los println!
+cargo test --release             # con optimizaciones
+cargo clippy -- -D warnings      # 🔑 el linter, fallando en cada aviso
+cargo fmt --check                # verifica formato sin cambiar (para CI)
+cargo doc --open                 # genera la documentación y la abre
+```
 
 🔑 **`cargo clippy` es el mejor profesor de Rust idiomático que existe.** No es un linter de estilo: te
 dice «esto se escribe así en Rust» con la razón. Pásalo y lee **todo** lo que diga.
@@ -75,10 +125,12 @@ y sale 0. **Lee el conteo, no el código de salida.**
 
 ## Dependencias y versiones
 
-    cargo add serde --features derive
-    cargo add tokio --features full
-    cargo tree                        # el árbol completo, para ver quién trae qué
-    cargo update                      # actualiza dentro de lo que permite Cargo.toml
+```bash
+cargo add serde --features derive
+cargo add tokio --features full
+cargo tree                        # el árbol completo, para ver quién trae qué
+cargo update                      # actualiza dentro de lo que permite Cargo.toml
+```
 
 **`Cargo.lock` va al repositorio si es un binario**, y **no** si es una biblioteca. Igual que `go.sum`,
 pero con esa distinción.

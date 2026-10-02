@@ -24,26 +24,87 @@ valor deja de usarse porque **rastrea quién es su dueño**. Eso es *ownership*,
 2. **Solo un dueño a la vez.**
 3. **Cuando el dueño sale de ámbito, el valor se libera.**
 
+**Fig. 2.1** | El ámbito de una variable.
+
+```rust
+// fig02_01.rs
+fn main() {
     {
         let s = String::from("hola");     // s es la dueña
+        println!("{s}");
     }                                     // aquí termina el ámbito: se libera. Sin free(), sin GC
+}
+```
+
+```bash
+$ rustc --edition 2024 fig02_01.rs && ./fig02_01
+hola
+```
 
 ## Movimiento: lo que rompe la intuición
 
+**Fig. 2.2** | Mover, no copiar.
+
+```rust
+// fig02_02.rs
+fn main() {
     let a = String::from("hola");
     let b = a;                  // NO copia: MUEVE. Ahora b es la dueña
     println!("{a}");            // ← error: valor movido
+}
+```
 
-    error[E0382]: borrow of moved value: `a`
-      help: consider cloning the value if the performance cost is acceptable
+```bash
+$ rustc --edition 2024 fig02_02.rs
+error[E0382]: borrow of moved value: `a`
+ --> fig02_02.rs:5:16
+  |
+3 |     let a = String::from("hola");
+  |         - move occurs because `a` has type `String`, which does not implement the `Copy` trait
+4 |     let b = a;                  // NO copia: MUEVE. Ahora b es la dueña
+  |             - value moved here
+5 |     println!("{a}");            // ← error: valor movido
+  |                ^ value borrowed here after move
+  |
+help: consider cloning the value if the performance cost is acceptable
+  |
+4 |     let b = a.clone();                  // NO copia: MUEVE. Ahora b es la dueña
+  |              ++++++++
+
+warning: unused variable: `b`
+ --> fig02_02.rs:4:9
+  |
+4 |     let b = a;                  // NO copia: MUEVE. Ahora b es la dueña
+  |         ^ help: if this is intentional, prefix it with an underscore: `_b`
+  |
+  = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+error: aborting due to 1 previous error; 1 warning emitted
+
+For more information about this error, try `rustc --explain E0382`.
+```
 
 **En Go, `b := a` copiaría el struct (y compartiría el arreglo si fuera un slice) y las dos variables
 seguirían usables.** En Rust, `a` deja de existir. El compilador lo sabe y te detiene.
 
 Dos salidas:
 
+**Fig. 2.3** | Las dos salidas: copiar o prestar.
+
+```rust
+// fig02_03.rs
+fn main() {
+    let a = String::from("hola");
     let b = a.clone();          // copia explícita: pagas la copia y lo dices
-    let b = &a;                 // PRESTAR en vez de mover ← esto es lo normal
+    let c = &a;                 // PRESTAR en vez de mover ← esto es lo normal
+    println!("{a} {b} {c}");
+}
+```
+
+```bash
+$ rustc --edition 2024 fig02_03.rs && ./fig02_03
+hola hola hola
+```
 
 ⚠️ **`clone()` es la tentación del principiante.** Compila y funciona, y el compilador hasta lo sugiere.
 Pero si tu solución a cada error es `.clone()`, estás peleando con el lenguaje en vez de usarlo. **Úsalo
@@ -51,20 +112,58 @@ cuando lo decidas a propósito, no para callar un error.**
 
 ## Préstamos: las dos reglas que lo explican todo
 
-    fn largo(s: &String) -> usize { s.len() }      // presta, no toma posesión
+**Fig. 2.4** | Prestar para leer.
 
+```rust
+// fig02_04.rs
+fn largo(s: &String) -> usize { s.len() }      // presta, no toma posesión
+
+fn main() {
     let s = String::from("hola");
     let n = largo(&s);
-    println!("{s}");                                // sigue siendo mía ✓
+    println!("{s} mide {n}");                   // sigue siendo mía ✓
+}
+```
+
+```bash
+$ rustc --edition 2024 fig02_04.rs && ./fig02_04
+hola mide 4
+```
 
 🔴 **Y aquí está la regla central del `borrow checker`:**
 
 > **Puedes tener MUCHAS referencias de solo lectura, O UNA de escritura. Nunca las dos cosas a la vez.**
 
+**Fig. 2.5** | Lecturas y escritura a la vez.
+
+```rust
+// fig02_05.rs
+fn main() {
     let mut s = String::from("hola");
     let r1 = &s;                  // lectura, ok
     let r2 = &s;                  // otra lectura, ok
     let r3 = &mut s;              // ← error: ya hay lecturas vivas
+    println!("{r1} {r2} {r3}");
+}
+```
+
+```bash
+$ rustc --edition 2024 fig02_05.rs
+error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+ --> fig02_05.rs:6:14
+  |
+4 |     let r1 = &s;                  // lectura, ok
+  |              -- immutable borrow occurs here
+5 |     let r2 = &s;                  // otra lectura, ok
+6 |     let r3 = &mut s;              // ← error: ya hay lecturas vivas
+  |              ^^^^^^ mutable borrow occurs here
+7 |     println!("{r1} {r2} {r3}");
+  |                -- immutable borrow later used here
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0502`.
+```
 
 **Por qué:** eso es exactamente lo que hace imposible una carrera de datos. En Go, dos goroutines
 escribiendo el mismo map rompen el programa **en ejecución** y necesitas `-race` para cazarlo. En Rust

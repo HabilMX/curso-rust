@@ -82,6 +82,8 @@ que van los ingenieros que ya pasaron esta etapa. No antes: no sirve de introduc
   causa y muchas veces la solución exacta. Ignorar eso es tirar la mejor herramienta que tienes.
 - **`cargo clippy` desde el primer día.** Es el linter oficial y enseña Rust idiomático mientras
   trabajas.
+- **[`programas/`](../programas/)** — todos los programas de las lecciones, listos para compilar y ejecutar, y el
+  `revisor` completo con sus pruebas. Cada uno se verifica automáticamente en cada cambio.
 - **[`bitacora.md`](bitacora.md)** — aquí importa más que en Go: anota **cada pelea con el borrow
   checker**. Cuando en la semana 5 las releas, vas a ver que las primeras ya te parecen obvias. Ése es
   el momento en que se aprendió.

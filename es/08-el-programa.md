@@ -2,85 +2,110 @@
 
 **The Book, capítulo 12** (el proyecto de línea de comandos). Al terminar: el `revisor` en Rust, completo.
 
-## Las cuatro dependencias, y por qué cada una
+## Las dependencias, y por qué cada una
 
-    cargo add tokio --features full          # el runtime async
-    cargo add reqwest --features json        # HTTP (usa tokio por debajo)
-    cargo add serde --features derive        # serializar: JSON, YAML, todo
-    cargo add serde_yaml                     # el formato de la config
-    cargo add clap --features derive         # línea de comandos
-    cargo add anyhow                         # errores de aplicación
+```bash
+cargo add tokio --features full          # el runtime async
+cargo add reqwest --features json        # HTTP (usa tokio por debajo)
+cargo add serde --features derive        # serializar: JSON, YAML, todo
+cargo add serde_yaml                     # el formato de la config
+cargo add clap --features derive         # línea de comandos
+cargo add anyhow                         # errores de aplicación
+cargo add serde_json                     # el JSON de la salida
+cargo add futures                        # join_all, para esperar a todos a la vez
+```
 
-⚠️ **Seis dependencias donde Go usó cero.** Es la diferencia de filosofía más concreta del curso: el
+⚠️ **Ocho dependencias donde Go usó cero.** Es la diferencia de filosofía más concreta del curso: el
 estándar de Rust es deliberadamente mínimo y el ecosistema pone el resto. A cambio, `serde` y `clap` son
 más potentes que sus equivalentes de Go.
 
 ## `serde`: serializar con una línea
 
-    use serde::{Deserialize, Serialize};
+<!-- verificar:extracto:src/modelo.rs -->
+```rust
+use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Clone, Deserialize)]
-    struct Servicio {
-        nombre: String,
-        url: String,
-        #[serde(default = "timeout_por_omision")]      // si falta en el YAML
-        timeout_ms: u64,
-    }
+#[derive(Debug, Clone, Deserialize)]
+pub struct Servicio {
+    pub nombre: String,
+    pub url: String,
+    #[serde(default = "timeout_por_omision")] // si falta en el YAML
+    pub timeout_ms: u64,
+}
 
-    #[derive(Serialize)]
-    struct EstadoJson {
-        servicio: String,
-        codigo: Option<u16>,
-        ms: u64,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        error: Option<String>,
-    }
+#[derive(Serialize)]
+pub struct EstadoJson {
+    pub servicio: String,
+    pub codigo: Option<u16>,
+    pub ms: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+```
 
 🔑 **`serde` lee YAML, JSON, TOML y una docena más con el mismo struct.** En Go pusiste etiquetas
 `json:"..."` y necesitabas otra biblioteca para YAML; aquí es el mismo derive.
 
 ## `clap`: la línea de comandos declarada
 
-    use clap::Parser;
+<!-- verificar:extracto:src/main.rs -->
+```rust
+use clap::Parser;
 
-    #[derive(Parser)]
-    #[command(version, about = "Revisa servicios en paralelo")]
-    struct Args {
-        #[arg(short, long, default_value = "servicios.yaml")]
-        archivo: String,
-        #[arg(short, long, default_value = "tabla")]
-        formato: String,
-        #[arg(short, long, default_value_t = 5)]
-        paralelo: usize,
-    }
+#[derive(Parser)]
+#[command(version, about = "Revisa servicios en paralelo")]
+struct Args {
+    #[arg(short, long, default_value = "servicios.yaml")]
+    archivo: String,
+    #[arg(short, long, default_value = "tabla")]
+    formato: String,
+    #[arg(short, long, default_value_t = 5)]
+    paralelo: usize,
+}
+```
 
-    let args = Args::parse();
+Y en `main` se leen así:
+
+<!-- verificar:fragmento -->
+```rust
+let args = Args::parse();
+```
 
 **`--help` sale escrito solo**, con tipos, valores por omisión y validación. Es bastante más de lo que
 da `flag` en Go, y es la dependencia que menos se discute.
 
 ## El binario
 
-    cargo build --release                    # target/release/revisor
+```bash
+cargo build --release                    # target/release/revisor
+```
 
 ⚠️ **Y aquí una diferencia que hay que decir sin adornos:** el binario de Rust con `tokio` y `reqwest`
 pesa **más** que el de Go y **tarda mucho más en compilar** — minutos contra segundos. Lo que ganas es
 que no hay recolector de basura, así que el uso de memoria es más bajo y predecible.
 
-    [profile.release]
-    strip = true              # quita símbolos
-    opt-level = "z"           # optimiza para tamaño
-    lto = true                # optimización entre módulos
-    codegen-units = 1
-    panic = "abort"           # sin desenrollado de pila
+<!-- verificar:extracto:Cargo.toml -->
+```toml
+[profile.release]
+strip = true              # quita símbolos
+opt-level = "z"           # optimiza para tamaño
+lto = true                # optimización entre módulos
+codegen-units = 1
+panic = "abort"           # sin desenrollado de pila
+
+[dev-dependencies]
+serde_json = "1.0.151"
+```
 
 Con eso baja bastante, a cambio de compilar más lento todavía.
 
 **Compilación cruzada:** aquí Go gana de calle. En Rust necesitas instalar el *target* y a menudo un
 enlazador cruzado:
 
-    rustup target add x86_64-unknown-linux-musl
-    cargo build --release --target x86_64-unknown-linux-musl
+```bash
+rustup target add x86_64-unknown-linux-musl
+cargo build --release --target x86_64-unknown-linux-musl
+```
 
 Contra el `GOOS=linux go build` de Go, que no pide nada. **Es la ventaja más práctica de Go y conviene
 reconocerla.**

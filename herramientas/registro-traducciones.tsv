@@ -5,7 +5,7 @@
 # vencida. Así la desincronización se detecta sola en vez de descubrirse meses
 # después leyendo una versión vieja.
 #
-# Se actualiza con:  ./registrar-traduccion.sh <archivo> <idioma>
-# Se comprueba con:  ./verificar-traducciones.sh
+# Se actualiza con:  herramientas/registrar-traduccion.sh <archivo> <idioma>
+# Se comprueba con:  herramientas/verificar-traducciones.sh
 #
 # archivo	idioma	sha256_del_español	fecha

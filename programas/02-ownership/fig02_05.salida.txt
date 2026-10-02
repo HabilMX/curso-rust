@@ -1,0 +1,14 @@
+error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+ --> fig02_05.rs:6:14
+  |
+4 |     let r1 = &s;                  // lectura, ok
+  |              -- immutable borrow occurs here
+5 |     let r2 = &s;                  // otra lectura, ok
+6 |     let r3 = &mut s;              // ← error: ya hay lecturas vivas
+  |              ^^^^^^ mutable borrow occurs here
+7 |     println!("{r1} {r2} {r3}");
+  |                -- immutable borrow later used here
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0502`.

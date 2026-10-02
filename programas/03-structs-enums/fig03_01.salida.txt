@@ -1,0 +1,3 @@
+catalogo (http://localhost:8090/ok)
+Servicio { nombre: "catalogo", url: "http://localhost:8090/ok", timeout_ms: 5000 }
+timeout: 5000 ms

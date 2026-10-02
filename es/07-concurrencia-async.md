@@ -7,7 +7,28 @@ ya. En Rust hay **dos mundos** y hay que elegir.
 
 ## Mundo 1 — Hilos del sistema (capítulo 16)
 
-    use std::thread;
+**Fig. 7.1** | Un hilo por servicio.
+
+```rust
+// fig07_01.rs
+use std::thread;
+
+struct Servicio {
+    nombre: String,
+}
+
+type Estado = String;     // en el curso es el enum de la semana 3; aquí basta un texto
+
+fn revisar(s: &Servicio) -> Estado {
+    format!("{}: OK", s.nombre)
+}
+
+fn main() {
+    let servicios = vec![
+        Servicio { nombre: "catalogo".to_string() },
+        Servicio { nombre: "pagos".to_string() },
+        Servicio { nombre: "reportes".to_string() },
+    ];
 
     let handles: Vec<_> = servicios.into_iter().map(|s| {
         thread::spawn(move || revisar(&s))      // `move` entrega la propiedad al hilo
@@ -15,7 +36,17 @@ ya. En Rust hay **dos mundos** y hay que elegir.
 
     for h in handles {
         let estado = h.join().unwrap();          // espera y recoge el resultado
+        println!("{estado}");
     }
+}
+```
+
+```bash
+$ rustc --edition 2024 fig07_01.rs && ./fig07_01
+catalogo: OK
+pagos: OK
+reportes: OK
+```
 
 🔑 **`join()` devuelve el valor**, así que no necesitas canales para recoger resultados — en Go hace falta
 un `WaitGroup` más un canal. Aquí es más directo.
@@ -25,13 +56,32 @@ servicios a la vez no es opción**; en Go sí.
 
 ### Compartir datos entre hilos
 
-    use std::sync::{Arc, Mutex};
+**Fig. 7.2** | Un dato compartido entre hilos.
+
+```rust
+// fig07_02.rs
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::thread;
+
+fn main() {
+    let estado = "OK".to_string();
 
     let estados = Arc::new(Mutex::new(HashMap::new()));
     let copia = Arc::clone(&estados);
-    thread::spawn(move || {
+    let h = thread::spawn(move || {
         copia.lock().unwrap().insert("x".to_string(), estado);
     });
+
+    h.join().unwrap();
+    println!("{:?}", estados.lock().unwrap());
+}
+```
+
+```bash
+$ rustc --edition 2024 fig07_02.rs && ./fig07_02
+{"x": "OK"}
+```
 
 🔴 **Y aquí está la gran diferencia: el `Mutex` en Rust ENVUELVE el dato.** No puedes acceder al
 `HashMap` sin pasar por `lock()`, porque el dato vive dentro del candado. En Go el mutex está *al lado*
@@ -42,17 +92,20 @@ llama *fearless concurrency*, y es el título del capítulo 16.
 
 ## Mundo 2 — Async, que es lo que vas a usar (capítulo 17)
 
-    // cargo add tokio --features full
-    #[tokio::main]
-    async fn main() {
-        let futuros: Vec<_> = servicios.iter().map(|s| revisar(s)).collect();
-        let estados = futures::future::join_all(futuros).await;   // todos a la vez
-    }
+<!-- verificar:fragmento -->
+```rust
+// cargo add tokio --features full
+#[tokio::main]
+async fn main() {
+    let futuros: Vec<_> = servicios.iter().map(|s| revisar(s)).collect();
+    let estados = futures::future::join_all(futuros).await;   // todos a la vez
+}
 
-    async fn revisar(s: &Servicio) -> Estado {
-        let resp = reqwest::get(&s.url).await;    // .await cede el control mientras espera
-        // ...
-    }
+async fn revisar(s: &Servicio) -> Estado {
+    let resp = reqwest::get(&s.url).await;    // .await cede el control mientras espera
+    // ...
+}
+```
 
 **Para miles de conexiones de red, async es lo correcto**: no gasta un hilo por tarea.
 

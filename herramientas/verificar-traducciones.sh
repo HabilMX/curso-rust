@@ -5,9 +5,9 @@
 # español deja las otras cuatro versiones viejas, y una traducción vieja no da
 # error: simplemente enseña algo que ya no es cierto.
 set -uo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 IDIOMAS="en fr pt bg"
-REG=registro-traducciones.tsv
+REG=herramientas/registro-traducciones.tsv
 al_dia=0; vencidas=0; faltan=0
 
 printf "%-28s %-4s %s\n" "CAPÍTULO" "IDI" "ESTADO"

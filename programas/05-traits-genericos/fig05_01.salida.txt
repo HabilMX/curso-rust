@@ -1,0 +1,2 @@
+revisor -> FALLA: catalogo: sin red en este ejemplo (límite 2000 ms)
+falso -> OK en 1ms
