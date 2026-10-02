@@ -27,7 +27,9 @@
 #       herramientas/verificar-programas.sh es --mostrar  (imprime la salida real de cada uno)
 #       herramientas/verificar-programas.sh es --exportar DIR
 #           no corre nada: deja en DIR/<leccion>/ cada programa (figNN_NN.rs) y su
-#           salida documentada (figNN_NN.salida.txt). Lo usa generar-programas.sh.
+#           salida documentada: figNN_NN.salida.txt, o figNN_NN.error-esperado.txt
+#           si el programa NO compila a propósito (la lección enseña ese error).
+#           Lo usa generar-programas.sh.
 #       herramientas/verificar-programas.sh --probar
 #           autoprueba: siembra defectos en una copia y exige que se detecten.
 #
@@ -141,7 +143,9 @@ if modo == "--exportar":
         os.makedirs(d, exist_ok=True)
         open(os.path.join(d, fig + ".rs"), "w", encoding="utf8").write(codigo)
         if sal is not None:
-            open(os.path.join(d, fig + ".salida.txt"), "w", encoding="utf8").write(sal)
+            # el comando sin «&& ./fig» es el que documenta un fallo de compilación
+            ext = ".error-esperado.txt" if cmd == f"$ rustc --edition {EDICION} {fig}.rs" else ".salida.txt"
+            open(os.path.join(d, fig + ext), "w", encoding="utf8").write(sal)
     sys.exit(0)
 
 # --- 3. compilar, correr, comparar ----------------------------------------------

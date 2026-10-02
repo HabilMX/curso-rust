@@ -26,8 +26,8 @@ rustc --edition 2024 fig02_04.rs && ./fig02_04      # compara lo que imprime con
 ```
 
 Cada programa de las lecciones 0 a 7 es un archivo `figNN_NN.rs` dentro de la carpeta de su lección, con su
-salida esperada al lado (`figNN_NN.salida.txt`). Algunos **no compilan a propósito**, porque la lección enseña
-justo ese error; su salida esperada es el mensaje del compilador. Uno es de pruebas (`fig06_01.rs`) y se
+salida esperada al lado (`figNN_NN.salida.txt`). Los que **no compilan a propósito**, porque la lección enseña
+justo ese error, traen `figNN_NN.error-esperado.txt` (el mensaje del compilador) en lugar de la salida. Uno es de pruebas (`fig06_01.rs`) y se
 compila con `--test`. El comando exacto de cada uno está en su lección, justo debajo del código.
 
 El proyecto completo que se construye en las lecciones 4 a 8 es [`programas/revisor/`](programas/revisor/), con
