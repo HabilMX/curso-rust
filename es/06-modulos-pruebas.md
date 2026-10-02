@@ -380,13 +380,15 @@ futures = "0.3.34"
 reqwest = { version = "0.13.5", features = ["json"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
-serde_yaml = "0.9.34"
+yaml_serde = "0.10.7"
 tokio = { version = "1.53.1", features = ["full"] }
 ```
 
+Una nota sobre una de esas líneas. Hasta 2024, el crate más usado para leer YAML con `serde` era `serde_yaml`. Su autor, David Tolnay, dejó de mantenerlo: su última versión es la `0.9.34+deprecated`, de marzo de 2024, y crates.io la marca como obsoleta. Todavía compila y funciona, pero ya no recibe correcciones ni mejoras, así que no conviene empezar un proyecto nuevo con ella. El `revisor` usa `yaml_serde`, una continuación publicada por la organización de YAML en GitHub: su repositorio la presenta como la bifurcación mantenida de `serde_yaml` y promete la misma interfaz. Por eso el cambio casi no toca el código: lo que sabes de `serde_yaml::from_str` sirve igual con `yaml_serde::from_str`. Existen otras bifurcaciones y alternativas; antes de elegir una, mira la fecha de su última versión y si su repositorio sigue recibiendo cambios. (Datos consultados en crates.io el 2 de octubre de 2026.)
+
 Una versión como `"1.0.104"` no fija por sí sola cada dígito para siempre. En Cargo, esa especificación usa compatibilidad semántica con operador caret implícito: permite actualizaciones compatibles dentro de la misma versión mayor. `Cargo.lock` es lo que hace repetible la compilación concreta del binario. Por eso el lockfile del `revisor` debe ir al repositorio: una persona que clone la aplicación debe resolver las mismas versiones conocidas, no una combinación nueva que hoy parezca compatible.
 
-La recomendación cambia para una biblioteca publicada. Una biblioteca normalmente no versiona su `Cargo.lock`, porque sus consumidores resolverán las dependencias junto con las propias. Un binario o aplicación sí debe versionarlo. La diferencia no es estética: una aplicación es el producto final que quieres reproducir; una biblioteca es una pieza que debe poder integrarse en grafos de dependencias ajenos.
+Para una biblioteca publicada, la respuesta es menos tajante. `cargo new` registra el `Cargo.lock` en el repositorio por omisión, y las preguntas frecuentes de Cargo (el [Cargo FAQ](https://doc.rust-lang.org/cargo/faq.html#why-have-cargolock-in-version-control)) dicen que versionarlo o no depende de lo que necesite tu paquete. Versionarlo da compilaciones repetibles: ayuda a encontrar con `git bisect` qué cambio introdujo un error, a que la integración continua falle solo por commits nuevos y no por una dependencia que cambió afuera, y a verificar con versiones conocidas cosas como la versión mínima de Rust o el texto exacto de los mensajes de error. Pero ese archivo no protege a quien usa tu biblioteca: los consumidores resuelven las dependencias con lo que declara tu `Cargo.toml` y con su propio `Cargo.lock`, y `cargo install` ignora por omisión el `Cargo.lock` del paquete y elige las versiones compatibles más recientes, a menos que le pases `--locked`. En resumen: una aplicación como el `revisor` conviene versionarla siempre, porque es el producto final que quieres reproducir; para una biblioteca, decídelo según qué quieres garantizar, y si no la versionas, prueba de vez en cuando con las dependencias más nuevas.
 
 Agrega una dependencia con Cargo en lugar de escribir a mano una línea que no entiendes:
 

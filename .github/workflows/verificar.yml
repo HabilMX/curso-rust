@@ -26,6 +26,7 @@ jobs:
         run: |
           herramientas/verificar-programas.sh --probar
           herramientas/verificar-extractos.sh --probar
+          herramientas/verificar-ejemplos.sh --probar
 
       - name: La profundidad se mide (piso de 3,000 palabras por lección, mediana de 4,000)
         run: herramientas/medir-profundidad.sh
@@ -38,6 +39,9 @@ jobs:
 
       - name: Comparar los extractos con el código real y revisar que cada bloque esté declarado
         run: herramientas/verificar-extractos.sh
+
+      - name: Compilar y ejecutar los ejemplos con crates (tokio, reqwest, serde, clap)
+        run: herramientas/verificar-ejemplos.sh
 
       - name: Comprobar que programas/ coincide con las lecciones
         run: herramientas/generar-programas.sh --comprobar

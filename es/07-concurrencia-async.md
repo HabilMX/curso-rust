@@ -13,7 +13,7 @@
 - Usar un canal de la biblioteca estándar para entregar resultados sin compartir una colección mutable.
 - Leer el error `E0277` cuando un valor no cumple `Send` y reconocer que el compilador está protegiendo una frontera entre hilos.
 - Explicar la diferencia entre concurrencia y paralelismo, y entre un hilo del sistema, una tarea async y una gorrutina de Go.
-- Seguir en el `revisor` el recorrido de una consulta async, desde `#[tokio::main]` hasta `join_all`, el semáforo y el resultado ordenado.
+- Seguir en el `revisor` el recorrido de una consulta async, desde `#[tokio::main]` hasta `join_all`, el semáforo y el estado que queda ligado a cada servicio.
 
 ## El porqué antes del cómo
 
@@ -171,7 +171,7 @@ El programa espera el hilo antes de recorrer el receptor para conservar una sali
 
 Los canales no sustituyen automáticamente a los mutexes. Si varias tareas necesitan leer y actualizar la misma cuenta, quizá un `Mutex` sea el modelo natural. Si una tarea produce valores y otra decide cómo almacenarlos o mostrarlos, un canal suele representar mejor la responsabilidad. El error común es elegir por moda: “los mutexes son malos” o “los canales son complicados”. La pregunta útil es quién debe ser dueño de cada dato en cada momento.
 
-En el `revisor`, `join_all` cumple una función parecida a recibir todos los resultados, pero con un contrato adicional: conserva el orden de los futuros de entrada. El proyecto no usa un canal para los estados porque el reporte necesita el mismo orden que la lista YAML de servicios. Si el producto necesitara imprimir “terminó pagos” apenas llegue la respuesta, un canal o un stream sería una opción razonable. No lo agregues solo porque existe; la elección actual es intencional y mantiene el reporte reproducible.
+En el `revisor`, `join_all` cumple una función parecida a recibir todos los resultados, pero con un contrato adicional: conserva el orden de los futuros de entrada, de modo que `estados[i]` es siempre el resultado de `servicios[i]`. Eso es lo que necesita el reporte: saber a qué servicio pertenece cada estado. Ojo con lo que *no* promete: el reporte no se imprime en el orden de la lista YAML, porque `reporte::tabla` y `reporte::json` ordenan las filas por nombre de servicio antes de escribirlas (lo verás en la lección 8). Lo que `join_all` garantiza es la correspondencia entre cada servicio y su estado, y con un canal, donde los resultados llegan en el orden en que terminan, habría que reconstruirla a mano. Si el producto necesitara imprimir “terminó pagos” apenas llegue la respuesta, un canal o un stream (una secuencia de valores que van llegando con el tiempo) sería una opción razonable. No lo agregues solo porque existe; la elección actual es intencional y mantiene el reporte reproducible.
 
 ### `Send`, `Sync` y el error que el compilador detiene
 
@@ -205,6 +205,62 @@ async fn ejecutar(args: &Args) -> ExitCode {
 El atributo `#[tokio::main]` construye el runtime y ejecuta la función `main` async. El `main` del programa sigue devolviendo un `ExitCode`, como aprendiste en la lección 6; lo que cambia es que ahora puede esperar operaciones async antes de decidir el código de salida. El binario conserva la responsabilidad de parsear argumentos, imprimir y salir; la biblioteca conserva la lógica de consultar servicios.
 
 No bloquees un hilo del runtime con `std::thread::sleep`, lectura de archivos pesada o cálculo largo dentro de una función async. Un hilo bloqueado no puede sondear otros futuros asignados a él. Para trabajo bloqueante existe `tokio::task::spawn_blocking`; para E/S de red, usa APIs async como `reqwest`. El `revisor` usa `reqwest::Client` y espera su `send().await`, por lo que mientras una respuesta está pendiente el runtime puede avanzar consultas de otros servicios.
+
+Antes de ver cómo el `revisor` usa Tokio, conviene ver Tokio solo. El siguiente programa es el más pequeño que muestra lo importante: tres «revisiones» que, en lugar de consultar la red, simplemente esperan, cada una un tiempo distinto. No cabe en un `rustc` a secas, porque depende de los crates `tokio` y `futures`; por eso vive en `programas/revisor/examples/` y se ejecuta con Cargo, que descarga y compila esas dependencias.
+
+**Ejemplo de cargo con `tokio`** | Tres esperas conducidas a la vez con `join_all`: terminan en un orden y se entregan en otro.
+
+<!-- verificar:ejemplo:ejemplo_tokio -->
+```rust
+// ejemplo_tokio.rs
+use std::time::{Duration, Instant};
+
+use futures::future::join_all;
+use tokio::time::sleep;
+
+async fn revisar(nombre: &str, espera_ms: u64) -> String {
+    sleep(Duration::from_millis(espera_ms)).await;
+    println!("terminó {nombre}");
+    format!("{nombre}: respondió tras {espera_ms} ms")
+}
+
+#[tokio::main]
+async fn main() {
+    let servicios = [("catalogo", 300), ("pagos", 100), ("usuarios", 200)];
+    let inicio = Instant::now();
+
+    let futuros = servicios.iter().map(|(nombre, ms)| revisar(nombre, *ms));
+    let resultados = join_all(futuros).await;
+
+    println!("--- en el orden de la lista ---");
+    for resultado in &resultados {
+        println!("{resultado}");
+    }
+    // Esperarlos uno tras otro habría tardado 600 ms; a la vez tardan lo del más lento.
+    let a_la_vez = inicio.elapsed() < Duration::from_millis(550);
+    println!("tardó menos que la suma de las esperas: {a_la_vez}");
+}
+```
+
+```bash
+$ cargo run --example ejemplo_tokio
+terminó pagos
+terminó usuarios
+terminó catalogo
+--- en el orden de la lista ---
+catalogo: respondió tras 300 ms
+pagos: respondió tras 100 ms
+usuarios: respondió tras 200 ms
+tardó menos que la suma de las esperas: true
+```
+
+Ejecútalo desde `programas/revisor/` (en la primera corrida Cargo tarda un rato en compilar las dependencias).
+
+`#[tokio::main]` convierte `main` en una función async: construye el runtime y le entrega el futuro que `main` describe. `tokio::time::sleep` es la espera de Tokio, y se parece a `std::thread::sleep` en lo que hace pero no en cómo: con `.await`, la tarea cede el control al runtime mientras espera, y el runtime aprovecha para avanzar las demás. Con `std::thread::sleep` el hilo entero se quedaría dormido y nada más avanzaría en él.
+
+Lee la salida en dos partes. Los mensajes `terminó ...` salen en el orden en que cada espera se cumple: `pagos` (100 ms), `usuarios` (200 ms) y `catalogo` (300 ms), aunque la lista los declare en otro orden. Después, `join_all` entrega los resultados en el orden de la lista —`catalogo`, `pagos`, `usuarios`—, porque devuelve un `Vec` donde cada posición corresponde a su futuro de entrada. La última línea comprueba que fue concurrente: esperar las tres revisiones una tras otra habría tomado 600 ms, y a la vez toma lo que tarda la más lenta, unos 300 ms.
+
+Si cambias `sleep` por una llamada de red con `.send().await`, tienes la forma del `revisor`: muchos futuros que esperan, un solo `join_all` que los conduce y un `Vec` de resultados alineado con la lista de servicios.
 
 ### `join_all`, semáforos y el límite de paralelo del `revisor`
 
@@ -254,7 +310,7 @@ Rust no tiene una ventaja mágica de rendimiento por escribir `async`. Una tarea
 
 La garantía central de Rust aparece antes de ejecutar: un dato mutable no puede prestarse de forma incompatible, y los valores enviados a otro hilo deben cumplir los traits adecuados. Go privilegia una sintaxis pequeña y herramientas de ejecución como el detector de carreras. Go puede encapsular correctamente mutexes y canales; Rust puede tener deadlocks y errores lógicos. La diferencia no es “Go permite errores y Rust no”. Es dónde pone cada lenguaje la carga de comprobación y qué errores puede rechazar antes de correr.
 
-Para el `revisor`, la decisión queda justificada por el problema. Hay muchas esperas HTTP, los resultados deben conservar el orden de entrada y se necesita un tope configurable de solicitudes. Tokio, `join_all` y `Semaphore` expresan esas tres necesidades. Un diseño con un hilo por servicio funcionaría para una lista pequeña, pero escalaría peor y no aporta una ventaja al caso de uso. Un diseño con un mutex y un mapa compartido también podría funcionar, pero haría más compleja una relación que `join_all` ya conserva.
+Para el `revisor`, la decisión queda justificada por el problema. Hay muchas esperas HTTP, cada resultado debe seguir ligado a su servicio y se necesita un tope configurable de solicitudes. Tokio, `join_all` y `Semaphore` expresan esas tres necesidades. Un diseño con un hilo por servicio funcionaría para una lista pequeña, pero escalaría peor y no aporta una ventaja al caso de uso. Un diseño con un mutex y un mapa compartido también podría funcionar, pero haría más compleja una relación que `join_all` ya conserva.
 
 ## El error que vas a ver
 
@@ -317,7 +373,7 @@ También reconoce el error de diseño que no produce `E0277`: mantener un `Mutex
 
 - Usar `tokio::spawn` solo para “hacerlo concurrente”. En el `revisor`, `join_all` puede conducir futuros que prestan `cliente` y `servicios`, conserva el orden y evita exigir propiedad `'static`. `tokio::spawn` es útil para tareas independientes que deben vivir más allá del bloque actual, pero implica otro contrato de vida y de tipos.
 
-- Tratar la salida que llega primero como si fuera el orden correcto del reporte. En una interfaz de progreso puede ser útil informar por llegada. En un reporte que se compara contra el YAML de entrada, cambia la relación entre servicio y resultado. El `revisor` elige conservar el orden con `join_all`, y sus pruebas de integración comprueban esa propiedad.
+- Tratar la salida que llega primero como si fuera el estado del servicio que ocupa esa posición. En una interfaz de progreso puede ser útil informar por llegada. En un reporte, si el resultado de otro servicio se cuela en una fila, cada línea miente sobre su servicio. El `revisor` evita ese riesgo con `join_all`, que conserva la correspondencia entre `servicios[i]` y `estados[i]`, y sus pruebas de integración comprueban esa propiedad; el orden en que se imprimen las filas es otra decisión, que toma el reporte al ordenarlas por nombre.
 
 ## Ejercicios
 
@@ -382,9 +438,10 @@ Comprueba que los bloques y sus salidas siguen siendo verificables desde la raí
 ```bash
 herramientas/verificar-programas.sh es
 herramientas/verificar-extractos.sh
+herramientas/verificar-ejemplos.sh
 ```
 
-Ambos comandos deben terminar correctamente. El primero confirma que cada figura compila, corre y coincide con su salida documentada, salvo la figura diseñada para fallar. El segundo confirma que los extractos del `revisor` siguen siendo copias exactas del proyecto real.
+Los tres comandos deben terminar correctamente. El primero confirma que cada figura compila, corre y coincide con su salida documentada, salvo la figura diseñada para fallar. El segundo confirma que los extractos del `revisor` siguen siendo copias exactas del proyecto real. El tercero compila y ejecuta el ejemplo con `tokio` de esta lección y compara lo que imprime con lo documentado.
 
 Finalmente, verifica el comportamiento concurrente real del proyecto:
 

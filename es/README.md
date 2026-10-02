@@ -49,12 +49,12 @@ y solo entonces seguir.** Leer de corrido retiene mucho menos, aunque tome el mi
 
 | | Lección | The Book | Qué construyes |
 |---|---|---|---|
-| 0 | [Preparación](00-preparacion.md) | cap 1 | `cargo`, Rustlings y el juego de adivinar |
+| 0 | [Preparación](00-preparacion.md) | cap 1 | `rustup`, `cargo` y Rustlings |
 | 1 | [Fundamentos](01-fundamentos.md) | caps 2-3 | tipos, `mut`, control de flujo |
 | 2 | 🔴 [**Ownership**](02-ownership.md) | **cap 4** | **la lección que decide todo** |
 | 3 | [Structs, enums y match](03-structs-enums.md) | caps 5-6 | el modelo del `revisor`, con `Option` |
 | 4 | [Colecciones y errores](04-colecciones-errores.md) | caps 8-9 | `Vec`, `HashMap`, `Result`, `?` |
-| 5 | [Traits, genéricos y lifetimes](05-traits-genericos.md) | cap 10 | la abstracción, y el `'a` que asusta |
+| 5 | [Traits, genéricos y lifetimes](05-traits-genericos.md) | cap 10 | el trait `Revisor` y los genéricos, y el `'a` que asusta |
 | 6 | [Módulos, pruebas y cargo](06-modulos-pruebas.md) | caps 7, 11, 14 | el proyecto de verdad |
 | 7 | [Concurrencia y async](07-concurrencia-async.md) | caps 16-17 | **que revise todo a la vez** |
 | 8 | [El programa terminado](08-el-programa.md) | cap 12 | `reqwest`, `serde`, `clap`, el binario |

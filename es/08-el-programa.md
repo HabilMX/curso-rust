@@ -96,6 +96,58 @@ demo.yaml | json | 2
 
 El programa ilustra por qué no conviene escribir este parser a mano para cada binario. No genera `--help`, no documenta sus opciones por sí mismo, no valida valores permitidos y su código crecería rápido. `clap` declara el contrato y genera gran parte de esa mecánica. En el `revisor`, `Args` es el contrato de entrada: `archivo`, `formato` y `paralelo` tienen nombre largo, nombre corto, tipo y valor por omisión.
 
+La figura 8.1 armó a mano el parser de argumentos. Ahora, el mismo contrato con `clap`, el crate que usa el `revisor`. Igual que los demás ejemplos con dependencias, vive en `programas/revisor/examples/` y se ejecuta con Cargo desde esa carpeta.
+
+**Ejemplo de cargo con `clap`** | El mismo contrato de argumentos, declarado en lugar de programado.
+
+<!-- verificar:ejemplo:ejemplo_clap -->
+```rust
+// ejemplo_clap.rs
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(version, about = "Revisa servicios en paralelo")]
+struct Args {
+    #[arg(short, long, default_value = "servicios.yaml")]
+    archivo: String,
+    #[arg(short, long, default_value = "tabla")]
+    formato: String,
+    #[arg(short, long, default_value_t = 5)]
+    paralelo: usize,
+}
+
+fn main() {
+    // `try_parse_from` recibe los argumentos como una lista, en vez de leer
+    // los del sistema operativo: así el ejemplo corre igual en cualquier máquina.
+    let a = Args::try_parse_from(["revisor", "--formato", "json", "-p", "2"])
+        .expect("estos argumentos son válidos");
+    println!("{a:?}");
+
+    // Un valor que no es número: clap lo rechaza antes de que el programa arranque.
+    if let Err(e) = Args::try_parse_from(["revisor", "--paralelo", "muchos"]) {
+        println!("{:?}", e.kind());
+        println!("{}", e.to_string().lines().next().unwrap_or(""));
+    }
+
+    // Una opción que no existe.
+    if let Err(e) = Args::try_parse_from(["revisor", "--velocidad", "3"]) {
+        println!("{:?}", e.kind());
+    }
+}
+```
+
+```bash
+$ cargo run --example ejemplo_clap
+Args { archivo: "servicios.yaml", formato: "json", paralelo: 2 }
+ValueValidation
+error: invalid value 'muchos' for '--paralelo <PARALELO>': invalid digit found in string
+UnknownArgument
+```
+
+`#[derive(Parser)]` escribe por ti el código que convierte la lista de argumentos en un `Args`. En el programa real se llama `Args::parse()`, que lee los argumentos del sistema operativo; aquí se usa `try_parse_from`, que recibe la lista como parámetro, para que el ejemplo dé siempre la misma salida y para poder ver los errores sin terminar el programa. La primera línea muestra un `Args` completo: lo que se pasó (`formato` y `paralelo`) y el valor por omisión de lo que faltó (`archivo`). Las siguientes muestran lo que ocurre con un valor que no es número y con una opción que no existe: `clap` las rechaza con un tipo de error claro (`ValueValidation` y `UnknownArgument`) antes de que arranque la lógica del programa. Cuando usas `parse()` en lugar de `try_parse_from`, `clap` imprime ese mensaje con la ayuda de uso y termina con código 2, el mismo código que el `revisor` reserva para «no pude arrancar». Además, `--help` y `--version` salen gratis del atributo `#[command(version, about = ...)]`.
+
+Así se ve la declaración completa dentro del `revisor`:
+
 <!-- verificar:extracto:src/main.rs -->
 ```rust
 use clap::Parser;
@@ -171,7 +223,7 @@ La anotación `#[tokio::main]` crea y arranca el runtime necesario para poder us
 
 Un archivo YAML llega al programa como texto. El texto no sabe qué es un nombre, qué campo es obligatorio ni qué valor debe usarse cuando falta `timeout_ms`. Convertirlo a un `Vec<Servicio>` es pasar de datos que vienen del exterior a valores que el compilador puede revisar. Esa conversión es un límite de confianza: después de deserializar todavía debes validar las reglas de negocio que el formato no conoce.
 
-`serde` separa dos direcciones. `Deserialize` construye valores Rust desde YAML, JSON, TOML u otro formato que tenga un adaptador compatible. `Serialize` convierte valores Rust en un formato de salida. La estructura del dominio se conserva; cambia el formato que la rodea. Por eso el mismo `EstadoJson` se puede generar con `serde_json`, mientras `Servicio` entra con `serde_yaml`.
+`serde` separa dos direcciones. `Deserialize` construye valores Rust desde YAML, JSON, TOML u otro formato que tenga un adaptador compatible. `Serialize` convierte valores Rust en un formato de salida. La estructura del dominio se conserva; cambia el formato que la rodea. Por eso el mismo `EstadoJson` se puede generar con `serde_json`, mientras `Servicio` entra con `yaml_serde`.
 
 El siguiente programa muestra una decisión del dominio que también aparece en el JSON del `revisor`: un estado sano tiene código HTTP y no lleva error; una falla no inventa un código y sí incluye un motivo. El programa arma JSON manualmente para que se vea la diferencia. En el proyecto real no debes hacer esto a mano: `serde_json` se encarga de escapar texto y preservar un JSON válido.
 
@@ -210,6 +262,66 @@ $ rustc --edition 2024 fig08_02.rs && ./fig08_02
 ```
 
 En el `revisor`, el derive declara exactamente qué debe leer o escribir. `Servicio` deriva `Deserialize` porque se crea desde YAML. `EstadoJson` deriva `Serialize` porque se crea desde los resultados internos para producir JSON. `#[serde(default = "timeout_por_omision")]` no equivale a que el campo sea opcional en Rust: el campo final sigue siendo un `u64`; solo obtiene un valor cuando el YAML no lo declara.
+
+El siguiente programa usa los dos crates de datos del `revisor` en pequeño: `serde` para declarar el contrato, y `yaml_serde` y `serde_json` para los formatos. Los datos entran como un texto YAML escrito dentro del propio programa, para no depender de ningún archivo.
+
+**Ejemplo de cargo con `serde`** | El mismo `struct` lee YAML y escribe JSON.
+
+<!-- verificar:ejemplo:ejemplo_serde -->
+```rust
+// ejemplo_serde.rs
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Servicio {
+    nombre: String,
+    url: String,
+    #[serde(default = "timeout_por_omision")] // si falta en el YAML
+    timeout_ms: u64,
+}
+
+fn timeout_por_omision() -> u64 {
+    5000
+}
+
+fn main() -> Result<(), yaml_serde::Error> {
+    let yaml = "\
+- nombre: catalogo
+  url: http://localhost:8080
+- nombre: pagos
+  url: http://localhost:8081
+  timeout_ms: 250
+";
+    // YAML adentro: el mismo derive sirve para leer...
+    let servicios: Vec<Servicio> = yaml_serde::from_str(yaml)?;
+    for s in &servicios {
+        println!("{} espera {} ms", s.nombre, s.timeout_ms);
+    }
+
+    // ...y para escribir JSON, que es otro formato con el mismo modelo.
+    match serde_json::to_string(&servicios) {
+        Ok(json) => println!("{json}"),
+        Err(e) => println!("no se pudo escribir el JSON: {e}"),
+    }
+
+    // Un servicio sin `url` no es un Servicio: el error dice qué falta y dónde.
+    let roto: Result<Vec<Servicio>, _> = yaml_serde::from_str("- nombre: sin-url\n");
+    if let Err(e) = roto {
+        println!("YAML inválido: {e}");
+    }
+    Ok(())
+}
+```
+
+```bash
+$ cargo run --example ejemplo_serde
+catalogo espera 5000 ms
+pagos espera 250 ms
+[{"nombre":"catalogo","url":"http://localhost:8080","timeout_ms":5000},{"nombre":"pagos","url":"http://localhost:8081","timeout_ms":250}]
+YAML inválido: .[0]: missing field `url` at line 1 column 3
+```
+
+El mismo `struct Servicio` sirve para leer y para escribir porque deriva las dos mitades de `serde`: `Deserialize` para construirlo desde YAML y `Serialize` para escribirlo como JSON (el `Servicio` del `revisor` solo deriva `Deserialize`, porque nunca se escribe de vuelta). Fíjate en dos detalles. El servicio `catalogo` no declara `timeout_ms` en el YAML y aun así sale con 5000: es el efecto de `#[serde(default = ...)]`. Y el YAML inválido no hace caer el programa con un pánico: `from_str` devuelve un `Err` cuyo mensaje dice qué falta (`missing field `url``) y dónde (`.[0]` es el primer elemento de la lista; `line 1 column 3`, la posición en el texto). Ese mensaje es el que el `revisor` le muestra a quien corrige su archivo. Y como `yaml_serde` es la continuación mantenida de `serde_yaml` (el crate original ya no recibe cambios, como viste en la lección 6), todo lo que aquí se hace con `from_str` funciona igual con cualquiera de los dos nombres.
 
 <!-- verificar:extracto:src/modelo.rs -->
 ```rust
@@ -274,9 +386,130 @@ Un programa de supervisión no consulta HTTP para obtener un cuerpo y olvidarlo;
 
 No confundas ese resultado con una falla de configuración o con un error de serialización al producir el reporte. Esos sí impiden que el programa cumpla su trabajo y hacen que termine con código 2. La distinción evita dos errores frecuentes: detener toda la revisión porque un servicio cayó, o continuar como si nada cuando no se pudo leer el archivo que define qué servicios existen.
 
+Para ver `reqwest` sin depender de ningún servicio real, el siguiente programa levanta en la misma máquina un servidor de mentira y lo consulta con un cliente de `reqwest`. El servidor se arma con `TcpListener`, de la biblioteca estándar, y contesta a mano el texto mínimo de HTTP: responde `200` en `/sano`, `500` en `/roto` y tarda medio segundo en contestar `/lento`. Además, el programa intenta conectarse a un puerto donde no escucha nadie.
+
+**Ejemplo de cargo con `reqwest`** | Cuatro respuestas distintas de la red, vistas desde el cliente.
+
+<!-- verificar:ejemplo:ejemplo_reqwest -->
+```rust
+// ejemplo_reqwest.rs
+use std::io::{Read, Write};
+use std::net::TcpListener;
+use std::thread;
+use std::time::Duration;
+
+/// Un servidor HTTP de mentira, en esta misma máquina: /sano responde 200,
+/// /roto responde 500 y /lento tarda medio segundo en contestar.
+fn servidor_de_mentira() -> String {
+    let escucha = TcpListener::bind("127.0.0.1:0").expect("hay un puerto libre");
+    let direccion = escucha.local_addr().expect("el servidor tiene dirección");
+    thread::spawn(move || {
+        for conexion in escucha.incoming().flatten() {
+            thread::spawn(move || atender(conexion));
+        }
+    });
+    format!("http://{direccion}")
+}
+
+fn atender(mut conexion: std::net::TcpStream) {
+    let mut pedido = [0u8; 1024];
+    let n = conexion.read(&mut pedido).unwrap_or(0);
+    let texto = String::from_utf8_lossy(&pedido[..n]);
+    let ruta = texto.split_whitespace().nth(1).unwrap_or("/");
+    let estado = match ruta {
+        "/sano" => "200 OK",
+        "/roto" => "500 Internal Server Error",
+        "/lento" => {
+            thread::sleep(Duration::from_millis(500));
+            "200 OK"
+        }
+        _ => "404 Not Found",
+    };
+    let _ = write!(
+        conexion,
+        "HTTP/1.1 {estado}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    );
+}
+
+#[tokio::main]
+async fn main() {
+    let base = servidor_de_mentira();
+    let cliente = reqwest::Client::new();
+
+    for ruta in ["sano", "roto", "lento"] {
+        let respuesta = cliente
+            .get(format!("{base}/{ruta}"))
+            .timeout(Duration::from_millis(200))
+            .send()
+            .await;
+        match respuesta {
+            Ok(r) => println!("{ruta:<6} responde {}", r.status().as_u16()),
+            Err(e) if e.is_timeout() => println!("{ruta:<6} se acabó el tiempo de espera"),
+            Err(_) => println!("{ruta:<6} no responde"),
+        }
+    }
+
+    // Un puerto donde nadie escucha: la conexión misma falla.
+    let vacio = TcpListener::bind("127.0.0.1:0").expect("hay un puerto libre");
+    let direccion = vacio.local_addr().expect("tiene dirección");
+    drop(vacio);
+    match cliente.get(format!("http://{direccion}/")).send().await {
+        Ok(r) => println!("vacío  responde {}", r.status().as_u16()),
+        Err(e) if e.is_connect() => println!("vacío  no responde (rechazó la conexión)"),
+        Err(e) => println!("vacío  falló de otra forma: {e}"),
+    }
+}
+```
+
+```bash
+$ cargo run --example ejemplo_reqwest
+sano   responde 200
+roto   responde 500
+lento  se acabó el tiempo de espera
+vacío  no responde (rechazó la conexión)
+```
+
+Cada línea de la salida es uno de los casos que el `revisor` convierte en un estado del dominio. Un `500` no es un error de `reqwest`: la petición se hizo y el servidor contestó, así que `send().await` devuelve `Ok` con el código `500`, y es el programa quien decide qué significa. En cambio, un tiempo agotado (`.timeout(...)` de 200 ms contra un servidor que tarda 500) y una conexión rechazada sí llegan como `Err`, y el propio error dice de cuál de los dos casos se trata con `is_timeout()` e `is_connect()`. El cliente se crea una sola vez con `reqwest::Client::new()` y se reutiliza en cada consulta; el tiempo límite, en cambio, se fija por petición. La función `revisar` del proyecto real es esta misma idea, con los estados `Ok`, `Lento` y `Falla` en lugar de líneas de texto:
+
+<!-- verificar:extracto:src/revisar.rs -->
+```rust
+pub async fn revisar(cliente: &reqwest::Client, s: &Servicio) -> Estado {
+    let inicio = Instant::now();
+    let respuesta = cliente
+        .get(&s.url)
+        .timeout(Duration::from_millis(s.timeout_ms)) // .await cede el control mientras espera
+        .send()
+        .await;
+    let ms = inicio.elapsed().as_millis() as u64;
+
+    match respuesta {
+        Ok(r) if r.status().is_success() && ms > UMBRAL_LENTO_MS => Estado::Lento {
+            codigo: r.status().as_u16(),
+            ms,
+        },
+        Ok(r) if r.status().is_success() => Estado::Ok {
+            codigo: r.status().as_u16(),
+            ms,
+        },
+        Ok(r) => Estado::Falla {
+            motivo: format!("codigo {}", r.status().as_u16()),
+            ms,
+        },
+        Err(e) if e.is_timeout() => Estado::Falla {
+            motivo: "se acabo el tiempo de espera".to_string(),
+            ms,
+        },
+        Err(_) => Estado::Falla {
+            motivo: "no responde".to_string(),
+            ms,
+        },
+    }
+}
+```
+
 La red además obliga a separar concurrencia de orden. El `revisor` puede iniciar varias consultas al mismo tiempo, pero la salida debe ser reproducible y debe relacionar cada estado con su servicio correcto. `join_all` conserva el orden de los futuros de entrada, aunque las respuestas lleguen en otro orden. El semáforo limita cuántas consultas entran a la sección activa; no determina el orden final del `Vec<Estado>`.
 
-El ejemplo no hace HTTP real porque un programa de una sola figura debe ser determinista. En cambio, representa la política del semáforo: con límite 2, se entregan turnos de dos en dos. En el proyecto real cada turno vive hasta que termina la solicitud y el runtime despierta la tarea cuando la red responde.
+La siguiente figura no usa la red ni ningún crate, para que cualquiera pueda compilarla con `rustc` a secas y obtener siempre la misma salida. En lugar de HTTP, representa la política del semáforo: con límite 2, se entregan turnos de dos en dos. En el proyecto real cada turno vive hasta que termina la solicitud y el runtime despierta la tarea cuando la red responde.
 
 **Fig. 8.3** | Un límite de concurrencia divide los pendientes en lotes sin cambiar su orden.
 
@@ -577,6 +810,7 @@ Después repite el experimento con el programa de Go, en la misma computadora y 
 - `cargo run -- --help` muestra las opciones `--archivo`, `--formato` y `--paralelo`.
 - `cargo run -- --archivo archivo-que-no-existe.yaml` termina con código 2 y escribe el nombre del archivo en la salida de error.
 - `cargo run -- --formato xml` termina con código 2 y explica que los formatos válidos son `tabla` y `json`.
+- `cargo run --example ejemplo_clap`, `ejemplo_serde` y `ejemplo_reqwest` imprimen lo mismo que documenta esta lección, y `herramientas/verificar-ejemplos.sh` termina sin errores.
 - `cargo test` termina con resultados correctos para biblioteca, integración y binario.
 - `cargo clippy --all-targets -- -D warnings` termina sin avisos.
 - `cargo fmt --check` termina sin cambios pendientes.

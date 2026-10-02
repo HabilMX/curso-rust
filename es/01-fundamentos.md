@@ -263,11 +263,11 @@ El proyecto real tiene una función pequeña que convierte una configuración te
 pub fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
     // with_context agrega a qué archivo se refería el error, como el %w de Go
     let txt = std::fs::read_to_string(ruta).with_context(|| format!("leyendo {ruta}"))?;
-    Ok(serde_yaml::from_str(&txt)?)
+    Ok(yaml_serde::from_str(&txt)?)
 }
 ```
 
-Aún no necesitas desmenuzar `Result`, `?` ni `serde_yaml`; llegarán en la lección 4. Lo que ya puedes leer es la forma: `ruta` entra como una vista de texto, la función promete devolver una lista de servicios o un error, `txt` es un valor local inmutable y `Ok(...)` es el resultado final. Las firmas te dejan entender la frontera de una función incluso antes de conocer todos sus detalles internos.
+Aún no necesitas desmenuzar `Result`, `?` ni `yaml_serde`; llegarán en la lección 4. Lo que ya puedes leer es la forma: `ruta` entra como una vista de texto, la función promete devolver una lista de servicios o un error, `txt` es un valor local inmutable y `Ok(...)` es el resultado final. Las firmas te dejan entender la frontera de una función incluso antes de conocer todos sus detalles internos.
 
 ### Expresiones, sentencias y el punto y coma
 

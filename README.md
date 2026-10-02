@@ -25,7 +25,7 @@ Numeración única y continua: «Lección N», de la 0 a la 8. Cada una se apoya
 | 2 | Ownership | los programas que chocan a propósito con el compilador | las tres reglas de la propiedad, mover contra copiar, préstamos `&` y `&mut`, las dos reglas de los préstamos, por qué no hay recolector de basura |
 | 3 | Structs, enums y `match` | el modelo del `revisor`: `Servicio` y `Estado` | structs e `impl`, enums que llevan datos, `match` exhaustivo, `Option` en lugar de `nil` |
 | 4 | Colecciones y errores | la lista de servicios y el reporte, con errores de verdad | `Vec`, `HashMap`, `String` contra `&str`, `Result` y `?`, `panic!` contra `Result`, `anyhow` y `thiserror` |
-| 5 | Traits, genéricos y lifetimes | la abstracción de las comprobaciones del `revisor` | traits y métodos por omisión, genéricos con restricciones, lifetimes y el `'a` que asusta |
+| 5 | Traits, genéricos y lifetimes | el trait `Revisor` y una función genérica, en programas aparte del `revisor` real | traits y métodos por omisión, genéricos con restricciones, lifetimes y el `'a` que asusta |
 | 6 | Módulos, pruebas y `cargo` | el proyecto `revisor` ordenado y con pruebas | módulos y visibilidad, pruebas unitarias y de integración, `cargo test`, dependencias y versiones |
 | 7 | Concurrencia y async | el `revisor` concurrente: que revise todo a la vez | hilos del sistema, `Arc` y `Mutex`, canales, `async/await` con `tokio`, la comparación honesta con las gorrutinas de Go |
 | 8 | El programa terminado | el `revisor` completo, en un binario | `reqwest`, `serde`, `clap`, el perfil de release, el binario final y su comparación con el de Go |
@@ -99,6 +99,7 @@ Dentro de `herramientas/`:
 | | |
 |---|---|
 | `verificar-programas.sh` | compila y corre cada programa completo de las lecciones (los marcados `// figNN_NN.rs`) y compara su salida real contra la documentada. Los que no compilan a propósito se comparan por su código de error |
+| `verificar-ejemplos.sh` | compila y ejecuta cada ejemplo de cargo de `programas/revisor/examples/` y compara su salida con la documentada |
 | `verificar-extractos.sh` | comprueba que cada bloque de código de las lecciones esté declarado (programa, extracto o fragmento) y que cada **extracto** sea copia exacta del archivo real de `programas/revisor/` |
 | `generar-programas.sh` | arma `programas/` desde las lecciones; con `--comprobar` verifica que esté al día |
 | `verificar-plantilla.sh` | comprueba que cada lección tenga las partes de la plantilla, objetivos, ejercicios y fuentes en el número pedido |
@@ -107,7 +108,7 @@ Dentro de `herramientas/`:
 
 ## Qué es un programa, qué es un extracto, y por qué importa la diferencia
 
-**No todo bloque de código de este curso es un programa completo, y confundirlos engaña al lector.** Hay tres tipos, y cada uno se verifica distinto:
+**No todo bloque de código de este curso es un programa completo, y confundirlos engaña al lector.** Hay cuatro tipos, y cada uno se verifica distinto:
 
 - **Programa completo** — corre solo, de principio a fin: los bloques marcados `// figNN_NN.rs`. Se compilan y se
   ejecutan en cada cambio (con `-D warnings`: si el compilador avisa algo, falla), y su salida documentada se
@@ -116,6 +117,11 @@ Dentro de `herramientas/`:
   proyecto completo, con sus propias pruebas). No corre por sí solo fuera de ese archivo, pero
   `herramientas/verificar-extractos.sh` confirma que sigue siendo copia fiel, línea por línea, del archivo real —para que
   un cambio en el código no deje a la lección enseñando algo que ya no existe.
+- **Ejemplo de cargo** — un programa completo que usa un *crate* externo (`tokio`, `reqwest`, `serde`, `clap`) y por
+  eso no se compila con un `rustc` a secas. Vive en `programas/revisor/examples/`, comparte las dependencias del
+  `revisor` y se ejecuta con `cargo run --example NOMBRE`. `herramientas/verificar-ejemplos.sh` comprueba que el
+  bloque de la lección sea idéntico al archivo, que el ejemplo compile y corra, y que imprima exactamente la salida
+  documentada. Hay uno de `tokio` en la lección 7 y tres (`clap`, `serde`, `reqwest`) en la 8.
 - **Fragmento** — una ilustración sintáctica, una firma o un trozo que depende de otro archivo (o de un *crate* que
   el ejemplo no trae), para enseñar un patrón sin el ruido de un programa completo. No pretende ser copia
   exacta de nada y no se verifica en automático — se declara así, en vez de dejar que alguien lo confunda

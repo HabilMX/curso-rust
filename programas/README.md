@@ -10,5 +10,7 @@ Para ejecutar uno, entra a la carpeta de su lección y corre el comando que est�
 código (por ejemplo `rustc --edition 2024 fig02_04.rs && ./fig02_04`).
 
 `revisor/` es el proyecto completo que se construye en las lecciones 4 a 8, con sus pruebas (`cargo test`).
+En `revisor/examples/` están los ejemplos que usan crates externos (`tokio`, `reqwest`, `serde`, `clap`); se ejecutan
+con `cargo run --example ejemplo_tokio` (y así cada uno) desde `revisor/`.
 
 Estas carpetas se generan a partir de las lecciones: no se editan a mano.

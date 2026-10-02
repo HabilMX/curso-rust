@@ -12,7 +12,7 @@ use anyhow::{Context, Result};
 pub fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
     // with_context agrega a qué archivo se refería el error, como el %w de Go
     let txt = std::fs::read_to_string(ruta).with_context(|| format!("leyendo {ruta}"))?;
-    Ok(serde_yaml::from_str(&txt)?)
+    Ok(yaml_serde::from_str(&txt)?)
 }
 
 /// Revisa lo que el YAML no puede garantizar por sí solo: que haya al menos un
@@ -48,7 +48,7 @@ mod tests {
     use super::*;
 
     fn de_yaml(txt: &str) -> Vec<Servicio> {
-        serde_yaml::from_str(txt).expect("el YAML de la prueba es válido")
+        yaml_serde::from_str(txt).expect("el YAML de la prueba es válido")
     }
 
     #[test]

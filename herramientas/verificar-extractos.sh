@@ -17,6 +17,11 @@
 #       indentación CONSTANTE para todo el bloque: no «ignorando la indentación»,
 #       porque una indentación caótica sí debe fallar. Vale también para ```toml.
 #
+#   <!-- verificar:ejemplo:NOMBRE -->      (línea justo antes del bloque)
+#       Un ejemplo de cargo: el archivo programas/revisor/examples/NOMBRE.rs. Aquí solo
+#       se comprueba que el bloque sea copia fiel; que compile, corra y dé la salida
+#       documentada lo comprueba herramientas/verificar-ejemplos.sh.
+#
 #   <!-- verificar:fragmento -->          (línea justo antes del bloque)
 #       Ilustración sintáctica o pieza que no corre sola (una firma, un trozo
 #       de otro archivo, algo que usa crates que el ejemplo no trae). No
@@ -44,7 +49,7 @@ defectos = {
     "un extracto con una letra cambiada":
         ("es/04-colecciones-errores.md", lambda t: t.replace("agrega a qué archivo", "agrega a que archivo", 1)),
     "un extracto con la indentación revuelta":
-        ("es/04-colecciones-errores.md", lambda t: t.replace("\n    Ok(serde_yaml", "\n      Ok(serde_yaml", 1)),
+        ("es/04-colecciones-errores.md", lambda t: t.replace("\n    Ok(yaml_serde", "\n      Ok(serde_yaml", 1)),
     "un bloque rust sin marcar":
         ("es/03-structs-enums.md", lambda t: t.replace("<!-- verificar:fragmento -->\n", "", 1)),
     "un extracto que apunta a un archivo que no existe":
@@ -125,11 +130,17 @@ for cap in sorted(glob.glob(os.path.join(lecciones, "[0-9][0-9]-*.md"))):
     marca = None   # (tipo, ruta, línea)
     while i < len(L):
         linea = L[i]
-        m = re.match(r"<!--\s*verificar:(extracto:([^\s]+)|fragmento)\s*-->\s*$", linea)
+        m = re.match(r"<!--\s*verificar:(extracto:([^\s]+)|ejemplo:([A-Za-z0-9_]+)|fragmento)\s*-->\s*$", linea)
         if m:
             if marca:
                 malos.append(f"{nombre}:{marca[2]}: marcador sin bloque debajo")
-            marca = ("fragmento", None, i + 1) if m.group(1) == "fragmento" else ("extracto", m.group(2), i + 1)
+            if m.group(1) == "fragmento":
+                marca = ("fragmento", None, i + 1)
+            elif m.group(3):
+                # un ejemplo de cargo: su archivo completo vive en examples/ (lo corre verificar-ejemplos.sh)
+                marca = ("extracto", f"examples/{m.group(3)}.rs", i + 1)
+            else:
+                marca = ("extracto", m.group(2), i + 1)
             i += 1
             continue
         f = re.match(r"```(\w*)\s*$", linea)

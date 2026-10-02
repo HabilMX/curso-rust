@@ -244,9 +244,11 @@ use anyhow::{Context, Result};
 pub fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
     // with_context agrega a qué archivo se refería el error, como el %w de Go
     let txt = std::fs::read_to_string(ruta).with_context(|| format!("leyendo {ruta}"))?;
-    Ok(serde_yaml::from_str(&txt)?)
+    Ok(yaml_serde::from_str(&txt)?)
 }
 ```
+
+Una aclaración sobre el nombre: `yaml_serde::from_str` es el mismo `from_str` que ofrecía `serde_yaml`, el crate anterior, que ya no se mantiene. En la lección 6 verás por qué el `revisor` usa el primero.
 
 `with_context` agrega información que el sistema operativo no conoce. El error original puede decir “No such file or directory”, pero el contexto aclara cuál archivo estaba intentando leer el revisor. Es una diferencia entre un diagnóstico técnicamente correcto y un diagnóstico accionable. El operador `?` conserva esa cadena de causas al devolver el error.
 

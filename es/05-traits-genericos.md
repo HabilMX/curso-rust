@@ -2,7 +2,7 @@
 
 **Tiempo:** 2 × 45 min.
 
-**Qué construyes:** la abstracción de las comprobaciones del `revisor`.
+**Qué construyes:** el trait `Revisor` y una función genérica que lo usa, en programas aparte (el `revisor` real no declara ningún trait).
 
 **Qué aprendes:** traits y métodos por omisión, genéricos con restricciones, lifetimes y el `'a` que asusta.
 
@@ -118,7 +118,7 @@ Un trait no es una clase base. No guarda campos, no construye objetos y no hered
 
 Rust aplica la regla de coherencia, también llamada regla huérfana. Puedes implementar un trait tuyo para un tipo ajeno, por ejemplo `impl Revisor for String` si tuviera sentido. También puedes implementar un trait ajeno para un tipo tuyo, como `impl Display for Estado`. Lo que no puedes hacer es implementar un trait ajeno para un tipo ajeno: no puedes decidir desde tu crate cómo debe implementar `Display` un `Vec<String>`. La regla evita que dos dependencias distintas definan implementaciones incompatibles del mismo contrato.
 
-El `revisor` real no declara todavía un trait para sus consultas HTTP. Eso importa: la lección debe describir el código que existe, no uno imaginario. La implementación actual recibe un `reqwest::Client` concreto y sus pruebas de integración usan un servidor HTTP local. El mismo programa sí usa `impl` para agrupar métodos propios de los tipos del dominio:
+El `revisor` real no declara ningún trait para sus consultas HTTP. Su función `revisar` recibe un `reqwest::Client` concreto, y sus pruebas de integración usan un servidor HTTP local en lugar de un doble de pruebas. Es una decisión consciente: un trait que tendría una sola implementación real todavía no resuelve ningún problema. El trait `Revisor` de esta lección vive en programas aparte, para que practiques la forma; el proyecto lo necesitaría el día que existan dos maneras distintas de revisar un servicio. Mientras tanto, el programa sí usa `impl` para agrupar métodos propios de los tipos del dominio:
 
 <!-- verificar:extracto:src/modelo.rs -->
 ```rust
