@@ -7,11 +7,15 @@
 **Cada programa de este curso se compila y se ejecuta automáticamente en cada cambio; el sello verde lo comprueba y cualquiera puede ver la corrida.**
 Haz clic en el sello para abrir la última corrida y ver, paso por paso, qué se ejecutó y qué salió.
 
-> Por ahora el curso está en español; las traducciones vienen en camino.
+> El curso está en cinco idiomas. El español es la fuente; las demás versiones se traducen de ahí y `herramientas/verificar-traducciones.sh` avisa cuando alguna queda vieja.
 
 ## Dónde está el contenido
 
-- 📘 **[Español — el curso completo](es/README.md)** ← empieza aquí
+- 📘 **[Español — el curso completo](es/README.md)** ← empieza aquí (es la fuente)
+- 📗 **[English](en/README.md)** — the full course in English
+- 📙 **[Français](fr/README.md)** — le cours complet en français
+- 📕 **[Português (Brasil)](pt/README.md)** — o curso completo em português do Brasil
+- 📓 **[Български](bg/README.md)** — пълният курс на български
 - 💻 **[`programas/`](programas/)** — todos los programas del curso, listos para ejecutar
 
 ## Las lecciones
@@ -87,7 +91,7 @@ no pueden diferir.
 | | |
 |---|---|
 | `es/` | el curso en español, una lección por archivo |
-| `en/`, `fr/`, `pt/`, `bg/` | **futuras:** las traducciones todavía no existen |
+| `en/`, `fr/`, `pt/`, `bg/` | las traducciones (inglés, francés, portugués de Brasil y búlgaro), con las mismas lecciones; los bloques de código son idénticos a los del español |
 | `programas/` | los programas de las lecciones 0 a 8 (uno por archivo, con su salida esperada) y `revisor/`, el proyecto real de las lecciones 4 y 8 |
 | `herramientas/` | los scripts que verifican el curso (ver abajo) |
 | `.github/workflows/verificar.yml` | la verificación automática que muestra el sello |
@@ -104,7 +108,8 @@ Dentro de `herramientas/`:
 | `generar-programas.sh` | arma `programas/` desde las lecciones; con `--comprobar` verifica que esté al día |
 | `verificar-plantilla.sh` | comprueba que cada lección tenga las partes de la plantilla, objetivos, ejercicios y fuentes en el número pedido |
 | `medir-profundidad.sh` | mide las palabras de explicación por lección (piso de 3,000 y mediana de 4,000) |
-| `verificar-traducciones.sh`, `registrar-traduccion.sh`, `registro-traducciones.tsv` | llevan el control de qué traducciones están al día, para cuando existan |
+| `verificar-traducciones.sh`, `registrar-traduccion.sh`, `registro-traducciones.tsv` | llevan el control de qué traducciones están al día |
+| `glosario-traducciones.md` | los términos que cada idioma usa de forma uniforme |
 
 ## Qué es un programa, qué es un extracto, y por qué importa la diferencia
 
