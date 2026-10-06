@@ -614,3 +614,4 @@ cargo test
 - [The Rust Programming Language, глава 11: Writing Automated Tests](https://doc.rust-lang.org/book/ch11-00-testing.html) — консултирано на 2 октомври 2026 г.
 - [The Rust Programming Language, глава 14: More about Cargo and Crates.io](https://doc.rust-lang.org/book/ch14-00-more-about-cargo.html) — консултирано на 2 октомври 2026 г.
 - [Официална референция на Cargo: задаване на зависимости](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html) — консултирано на 2 октомври 2026 г.
+- [Тестове, които наистина хващат грешки: отвъд покритието и зеления quality gate](https://www.habil.mx/bg/blog/tests-that-catch-errors-coverage-quality-gate/) — статия за това, защо зеленото табло или високото покритие не са достатъчни и защо тестовете трябва да се броят от отчета, а не от изходния код; консултирано на 6 октомври 2026 г.

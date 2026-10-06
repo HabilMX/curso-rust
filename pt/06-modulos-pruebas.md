@@ -614,3 +614,4 @@ A solução não é conservar a mudança que faz o teste passar; é verificar qu
 - [The Rust Programming Language, capítulo 11: Writing Automated Tests](https://doc.rust-lang.org/book/ch11-00-testing.html) — consultado em 2 de outubro de 2026.
 - [The Rust Programming Language, capítulo 14: More about Cargo and Crates.io](https://doc.rust-lang.org/book/ch14-00-more-about-cargo.html) — consultado em 2 de outubro de 2026.
 - [Referência oficial do Cargo: especificar dependências](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html) — consultado em 2 de outubro de 2026.
+- [Testes que realmente detectam erros: além da cobertura e do quality gate em verde](https://www.habil.mx/pt/blog/testes-que-detectam-erros-cobertura-quality-gate/) — artigo sobre por que um painel em verde ou uma cobertura alta não bastam e por que convém contar os testes do relatório e não do código de saída; consultado em 6 de outubro de 2026.

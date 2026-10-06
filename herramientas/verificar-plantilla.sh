@@ -100,7 +100,8 @@ for f in archivos:
         n = len(re.findall(r"^### (?:Ejercicio )?\d+", "\n".join(fuera_de_codigo(sec["Ejercicios"])), re.M))
         if not 2 <= n <= 4: prob.append(f"ejercicios: {n} (se piden 2 a 4)")
     if "Para leer más" in sec:
-        urls = [l for l in sec["Para leer más"] if re.match(r"^\s*[-*]\s", l) and "http" in l]
+        urls = [l for l in sec["Para leer más"] if re.match(r"^\s*[-*]\s", l) and "http" in l
+                and not re.search(r"\]\(https://www\.[^)/]+/(es|en|fr|pt|bg)/blog/", l)]  # el artículo propio de la casa no es fuente externa
         if not 2 <= len(urls) <= 4: prob.append(f"fuentes con URL: {len(urls)} (se piden 2 a 4)")
     print(f"  {nombre:<40}{'ok' if not prob else 'FALLA'}")
     for p in prob: print(f"      - {p}")

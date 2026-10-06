@@ -614,3 +614,4 @@ The solution is not to keep the change that makes the test pass; it is to check 
 - [The Rust Programming Language, chapter 11: Writing Automated Tests](https://doc.rust-lang.org/book/ch11-00-testing.html) — accessed October 2, 2026.
 - [The Rust Programming Language, chapter 14: More about Cargo and Crates.io](https://doc.rust-lang.org/book/ch14-00-more-about-cargo.html) — accessed October 2, 2026.
 - [Official Cargo reference: specifying dependencies](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html) — accessed October 2, 2026.
+- [Tests that actually catch errors: beyond coverage and a green quality gate](https://www.habil.mx/en/blog/tests-that-catch-errors-coverage-quality-gate/) — article on why a green dashboard or high coverage is not enough and why test counts should be read from the report and not from the exit code; accessed on October 6, 2026.
