@@ -236,7 +236,7 @@ Ok(c)
 
 expressam uma cadeia de operações que no Go costuma ser escrita com uma verificação `if err != nil` depois de cada passo. O Rust reduz a repetição, mas não reduz a responsabilidade. Cada `?` marca um lugar onde a função pode sair antes. Se mais adiante o programa precisar limpar recursos, transformar um erro ou tomar uma alternativa, você deve decidir isso antes ou depois desse ponto.
 
-O `revisor` usa `?` para ler o arquivo e para desserializar o YAML. Ambas as falhas fazem parte de iniciar o programa: não há lista válida de serviços sem arquivo legível nem sem YAML válido. A função devolve `anyhow::Result<Vec<Servicio>>`, que permite unificar erros de tipos distintos sem perder suas mensagens.
+O `revisor` usa `?` para ler o arquivo e para desserializar o YAML. Ambas as falhas fazem parte de iniciar o programa: não há lista válida de serviços sem arquivo legível nem sem YAML válido. A função devolve `anyhow::Result<Vec<Servicio>>`, que permite unificar erros de tipos distintos sem perder suas mensagens. Com uma exceção deliberada, explicada depois do código: o erro do YAML passa antes por `map_err`.
 
 <!-- verificar:extracto:src/config.rs -->
 ```rust
@@ -244,11 +244,16 @@ use anyhow::{Context, Result};
 pub fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
     // with_context agrega a qué archivo se refería el error, como el %w de Go
     let txt = std::fs::read_to_string(ruta).with_context(|| format!("leyendo {ruta}"))?;
-    Ok(yaml_serde::from_str(&txt)?)
+    // el error de yaml_serde repite el valor que no entendió, y ese valor
+    // puede ser una URL con su clave: del error solo se dice dónde ocurrió
+    let servicios = yaml_serde::from_str(&txt).map_err(|e| sin_el_valor(ruta, &e))?;
+    Ok(servicios)
 }
 ```
 
 Um esclarecimento sobre o nome: `yaml_serde::from_str` é o mesmo `from_str` que o `serde_yaml` oferecia, o crate anterior, que já não é mantido. Na lição 6 você vai ver por que o `revisor` usa o primeiro.
+
+`map_err` troca o erro de um `Result` por outro e deixa o valor intacto se tudo deu certo. Ele é usado aqui porque o texto de um erro do `yaml_serde` repete o valor que não entendeu: se alguém escreve no arquivo uma lista de URLs em vez de uma lista de serviços, a mensagem seria `invalid type: string "http://usuario:clave@…", expected struct Servicio`, com a senha dentro. Uma mensagem de erro termina em um terminal, em um log ou em um sistema de alertas que muito mais gente lê do que o arquivo de configuração. Por isso `sin_el_valor` monta um erro próprio que diz o arquivo, a linha e a coluna, e nada do conteúdo. Perde-se um pouco de detalhe, como o nome do campo que faltava, em troca de nenhum segredo sair do arquivo por um erro.
 
 `with_context` acrescenta informação que o sistema operacional não conhece. O erro original pode dizer “No such file or directory”, mas o contexto esclarece qual arquivo o revisor estava tentando ler. É a diferença entre um diagnóstico tecnicamente correto e um diagnóstico acionável. O operador `?` conserva essa cadeia de causas ao devolver o erro.
 
@@ -311,14 +316,15 @@ Isso não significa que `anyhow` seja uma licença para apagar significado. Se u
 enum ErrorConfiguracion {
     #[error("el nombre «{0}» está repetido")]
     NombreRepetido(String),
-    #[error("la URL «{0}» no tiene esquema HTTP")]
+    // guarda el nombre del servicio, no la URL: una URL puede llevar una clave
+    #[error("la URL de «{0}» no tiene esquema HTTP")]
     UrlSinEsquema(String),
     #[error("no se pudo leer la configuración")]
     Lectura(#[from] std::io::Error),
 }
 ```
 
-Este fragmento ilustra uma API de biblioteca, não faz parte do revisor atual. `#[from]` permite converter automaticamente um `std::io::Error` em `ErrorConfiguracion`, de modo que `?` continue sendo útil. As outras variantes conservam dados que a pessoa que chama pode inspecionar por meio de `match`. Numa aplicação de uma só camada, converter no final esses erros para `anyhow::Error` pode ser cômodo; numa biblioteca, escondê-los cedo demais tira opções de quem a usa.
+Este fragmento ilustra uma API de biblioteca, não faz parte do revisor atual. `#[from]` permite converter automaticamente um `std::io::Error` em `ErrorConfiguracion`, de modo que `?` continue sendo útil. As outras variantes conservam dados que a pessoa que chama pode inspecionar por meio de `match`; `UrlSinEsquema` guarda o nome do serviço e não a URL, pela mesma razão que você vai ver em `config::cargar`: uma mensagem de erro não deve repetir algo que pode levar uma senha. Numa aplicação de uma só camada, converter no final esses erros para `anyhow::Error` pode ser cômodo; numa biblioteca, escondê-los cedo demais tira opções de quem a usa.
 
 A fronteira prática é esta: `anyhow` para executar uma aplicação e explicar uma falha completa; `thiserror` para oferecer um contrato de erros que outros programas devam tratar por variante. Você pode combinar ambos, mas não os acrescente por moda. Comece com o tipo que permite à camada seguinte tomar a decisão correta.
 
@@ -477,7 +483,7 @@ fn cargar(ruta: &str) -> anyhow::Result<Vec<Servicio>> {
 
         anyhow::ensure!(
             url.starts_with("http://") || url.starts_with("https://"),
-            "línea {}: URL sin esquema: {url}",
+            "línea {}: URL sin esquema",
             numero + 1
         );
 
@@ -489,7 +495,7 @@ fn cargar(ruta: &str) -> anyhow::Result<Vec<Servicio>> {
 }
 ```
 
-A solução não usa `unwrap` porque cada falha pode se originar em conteúdo externo. `split_once` devolve `Option`; `with_context` o converte num erro explicativo. `ensure!` termina a função com `Err` se a condição não é cumprida. O contexto inclui número de linha ou caminho para que quem corrige o arquivo não tenha de adivinhar por onde começar.
+A solução não usa `unwrap` porque cada falha pode se originar em conteúdo externo. `split_once` devolve `Option`; `with_context` o converte num erro explicativo. `ensure!` termina a função com `Err` se a condição não é cumprida. O contexto inclui número de linha ou caminho para que quem corrige o arquivo não tenha de adivinhar por onde começar, e a mensagem não repete a URL: a linha basta para encontrá-la, e uma URL pode levar uma senha.
 
 ## Como sei que consegui
 

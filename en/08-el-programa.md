@@ -362,12 +362,9 @@ pub fn validar(servicios: &[Servicio]) -> Result<()> {
             "el nombre «{}» está repetido",
             s.nombre
         );
-        anyhow::ensure!(
-            s.url.starts_with("http://") || s.url.starts_with("https://"),
-            "la URL «{}» de «{}» debe empezar con http:// o https://",
-            s.url,
-            s.nombre
-        );
+        if let Some(problema) = problema_de_url(&s.url) {
+            anyhow::bail!("la URL de «{}» {problema}", s.nombre);
+        }
         anyhow::ensure!(
             s.timeout_ms > 0,
             "el tiempo límite de «{}» debe ser mayor que cero",
@@ -379,6 +376,36 @@ pub fn validar(servicios: &[Servicio]) -> Result<()> {
 ```
 
 `anyhow::ensure!` returns early with an error when a condition isn't met. It is appropriate here because an invalid configuration doesn't represent a failed service: it is a condition that prevents starting the check. `with_context` in `cargar` adds the file name to a read error; the `{e:#}` format in `main` prints that chain of context together with the original cause. The result is more useful than a generic "could not open" message.
+
+One rule deserves its own function: the URL rule. `config::validar` doesn't just check that it starts with `http://`; it asks `problema_de_url` what prevents using it, and that function answers with a fixed phrase or with `None`.
+
+<!-- verificar:extracto:src/config.rs -->
+```rust
+/// Qué le impide al revisor usar una URL, o `None` si se puede usar. Devuelve
+/// siempre una frase fija, nunca un pedazo de la URL.
+///
+/// Exige `http` o `https` y un servidor, y rechaza usuario y clave: si un
+/// servicio pide credenciales, van en otro lado (una variable de entorno, un
+/// gestor de secretos), nunca en el archivo de servicios.
+fn problema_de_url(texto: &str) -> Option<&'static str> {
+    // el texto del error de `Url::parse` no se usa: basta con saber que falló
+    let Ok(url) = reqwest::Url::parse(texto) else {
+        return Some("no se puede leer como URL");
+    };
+    if url.scheme() != "http" && url.scheme() != "https" {
+        return Some("debe empezar con http:// o https://");
+    }
+    if url.host_str().is_none_or(str::is_empty) {
+        return Some("no tiene servidor");
+    }
+    if !url.username().is_empty() || url.password().is_some() {
+        return Some("trae usuario o clave; las credenciales no van en la URL");
+    }
+    None
+}
+```
+
+`reqwest::Url::parse` interprets the whole URL instead of looking only at its beginning, which is why it can reject a URL without a server (`http://`) or separate the user and the password in `https://usuario:clave@servidor`. Those credentials are rejected when the file is loaded, before anything is queried: a password written in the services file travels with it to every copy, every backup, and every repository, and if the service asks for credentials, they go somewhere else, such as an environment variable or a secrets manager. Notice also what no message does: repeat the URL. The error says `la URL de «pagos» trae usuario o clave; las credenciales no van en la URL` and names the service by its name, not by its address. Rejecting a password and then printing it in the message that explains the rejection would publish the very secret you meant to protect. For the same reason the text of the `Url::parse` error isn't used: knowing that it failed is enough.
 
 ### `reqwest` turns the network into domain statuses
 

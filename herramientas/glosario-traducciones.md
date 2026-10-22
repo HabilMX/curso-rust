@@ -211,6 +211,11 @@ Una sola forma por idioma; los traductores la usan igual desde la fecha de esta 
 | atributo (`#[derive]`) | attribute | attribut | atributo | атрибут |
 | exhaustividad | exhaustiveness | exhaustivité | exaustividade | изчерпателност |
 | invariante | invariant | invariant | invariante | инвариант |
+| credenciales (usuario y clave en una URL) | credentials | identifiants | credenciais | идентификационни данни |
+| clave (contraseña) | password | mot de passe | senha | парола |
+| gestor de secretos | secrets manager | gestionnaire de secrets | gerenciador de segredos | мениджър на тайни |
+| log (registro de eventos de un programa; no es la `bitacora` del alumno) | log | journal | log | лог |
+| respaldo (copia de seguridad) | backup | sauvegarde | backup | резервно копие |
 
 *(Provisional, por revisar: las celdas que ningún traductor propuso las fijó el coordinador por analogía con el glosario; si tu idioma ya usó otra forma en lecciones entregadas, avisa y se unifica.)*
 

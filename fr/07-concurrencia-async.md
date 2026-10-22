@@ -2,7 +2,7 @@
 
 **Durée :** 2 × 45 min.
 
-**Ce que tu construis :** le `revisor` concurrent : qu'il vérifie tout à la fois
+**Ce que tu construis :** le `revisor` concurrent, qui vérifie tout en même temps
 
 **Ce que tu apprends :** threads du système, `Arc` et `Mutex`, canaux, `async/await` avec `tokio`, la comparaison honnête avec les goroutines de Go
 

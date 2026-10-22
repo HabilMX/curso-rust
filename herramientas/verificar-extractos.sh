@@ -49,7 +49,7 @@ defectos = {
     "un extracto con una letra cambiada":
         ("es/04-colecciones-errores.md", lambda t: t.replace("agrega a qué archivo", "agrega a que archivo", 1)),
     "un extracto con la indentación revuelta":
-        ("es/04-colecciones-errores.md", lambda t: t.replace("\n    Ok(yaml_serde", "\n      Ok(serde_yaml", 1)),
+        ("es/04-colecciones-errores.md", lambda t: t.replace("\n    let servicios = yaml_serde", "\n      let servicios = yaml_serde", 1)),
     "un bloque rust sin marcar":
         ("es/03-structs-enums.md", lambda t: t.replace("<!-- verificar:fragmento -->\n", "", 1)),
     "un extracto que apunta a un archivo que no existe":

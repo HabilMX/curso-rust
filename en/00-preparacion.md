@@ -19,7 +19,7 @@
 
 This lesson doesn't look like a Rust lesson, because it doesn't teach ownership, types, or `match` yet. Even so, it decides an important part of how you will learn the language: from day one you will work with the same toolchain, the same conventions, and the same kind of errors that a real project uses. Installing something that "more or less compiles" is enough for an isolated exercise; installing the right environment is necessary to follow a course, read current documentation, and build the `revisor` without the tooling becoming an extra problem.
 
-The course was written and checked with stable Rust 1.98.1 and the 2024 edition. This is a concrete reference so that the programs, messages, and examples mean the same thing for everyone; with a later stable release the programs should behave the same way, although the wording of some compiler message may change. Rust publishes a stable release roughly every six weeks. Linux Mint, on the other hand, inherits a good part of its packages from Ubuntu, and an LTS distribution puts system stability first: it freezes major versions and applies security patches. That is a reasonable decision for system software; it is not a good way to follow closely a language whose ecosystem, documentation, and tools change often.
+The course was checked with stable Rust 1.99.1 (released on October 15, 2026, according to the [official announcement](https://blog.rust-lang.org/2026/10/15/Rust-1.99.1/)) and the 2024 edition. This is a concrete reference so that the programs, messages, and examples mean the same thing for everyone; with a later stable release the programs should behave the same way, although the wording of some compiler message may change. Rust publishes a stable release roughly every six weeks. Linux Mint, on the other hand, inherits a good part of its packages from Ubuntu, and an LTS distribution puts system stability first: it freezes major versions and applies security patches. That is a reasonable decision for system software; it is not a good way to follow closely a language whose ecosystem, documentation, and tools change often.
 
 That is why `apt install rustc` seems to work at first and can cause confusion later. It installs a compiler called `rustc`, but not necessarily the compiler that The Rust Book, recent examples, or the projects you find use. The problem doesn't always show up as "your version is old". Sometimes it appears as an unknown feature, an edition that doesn't exist, a different compiler suggestion, or a dependency that no longer accepts that version. It is the worst kind of setup failure: it happens later and looks like a bug in your program.
 
@@ -69,7 +69,7 @@ type -a rustc
 type -a cargo
 ```
 
-The first one shows the active toolchain. The next two should show Rust 1.98.1 or a later stable version if you have already updated your environment. `type -a` is especially useful if you ever installed Rust with `apt`: it lists all the matches the shell finds and lets you discover that you are running an old binary ahead of the one in `~/.cargo/bin`.
+The first one shows the active toolchain. The next two should show Rust 1.99.1 or a later stable version if you have already updated your environment. `type -a` is especially useful if you ever installed Rust with `apt`: it lists all the matches the shell finds and lets you discover that you are running an old binary ahead of the one in `~/.cargo/bin`.
 
 Don't confuse a Linux Mint update with a Rust update. To update the stable toolchain, use:
 

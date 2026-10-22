@@ -236,7 +236,7 @@ Ok(c)
 
 expriment une chaîne d'opérations qui, en Go, s'écrit généralement avec une vérification `if err != nil` après chaque étape. Rust réduit la répétition, mais ne réduit pas la responsabilité. Chaque `?` marque un endroit où la fonction peut sortir plus tôt. Si, plus tard, le programme doit nettoyer des ressources, transformer une erreur ou prendre une alternative, tu dois le décider avant ou après ce point.
 
-Le `revisor` utilise `?` pour lire le fichier et pour désérialiser le YAML. Les deux échecs font partie du démarrage du programme : il n'y a pas de liste valide de services sans fichier lisible ni sans YAML valide. La fonction renvoie `anyhow::Result<Vec<Servicio>>`, ce qui permet d'unifier des erreurs de types différents sans perdre leurs messages.
+Le `revisor` utilise `?` pour lire le fichier et pour désérialiser le YAML. Les deux échecs font partie du démarrage du programme : il n'y a pas de liste valide de services sans fichier lisible ni sans YAML valide. La fonction renvoie `anyhow::Result<Vec<Servicio>>`, ce qui permet d'unifier des erreurs de types différents sans perdre leurs messages. Avec une exception délibérée, expliquée après le code : l'erreur YAML passe d'abord par `map_err`.
 
 <!-- verificar:extracto:src/config.rs -->
 ```rust
@@ -244,11 +244,16 @@ use anyhow::{Context, Result};
 pub fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
     // with_context agrega a qué archivo se refería el error, como el %w de Go
     let txt = std::fs::read_to_string(ruta).with_context(|| format!("leyendo {ruta}"))?;
-    Ok(yaml_serde::from_str(&txt)?)
+    // el error de yaml_serde repite el valor que no entendió, y ese valor
+    // puede ser una URL con su clave: del error solo se dice dónde ocurrió
+    let servicios = yaml_serde::from_str(&txt).map_err(|e| sin_el_valor(ruta, &e))?;
+    Ok(servicios)
 }
 ```
 
 Une précision sur le nom : `yaml_serde::from_str` est le même `from_str` qu'offrait `serde_yaml`, le crate précédent, qui n'est plus maintenu. À la leçon 6, tu verras pourquoi le `revisor` utilise le premier.
+
+`map_err` remplace l'erreur d'un `Result` par une autre et laisse la valeur intacte si tout s'est bien passé. Elle sert ici parce que le texte d'une erreur de `yaml_serde` répète la valeur qu'il n'a pas comprise : si quelqu'un écrit dans le fichier une liste d'URL au lieu d'une liste de services, le message serait `invalid type: string "http://usuario:clave@…", expected struct Servicio`, avec le mot de passe dedans. Un message d'erreur finit dans un terminal, dans un journal ou dans un système d'alertes que beaucoup plus de gens lisent que le fichier de configuration. C'est pourquoi `sin_el_valor` construit sa propre erreur, qui indique le fichier, la ligne et la colonne, et rien du contenu. Il se perd un peu de détail, comme le nom du champ manquant, en échange de quoi aucun secret ne sort du fichier par une erreur.
 
 `with_context` ajoute une information que le système d'exploitation ne connaît pas. L'erreur d'origine peut dire « No such file or directory », mais le contexte précise quel fichier le revisor essayait de lire. C'est la différence entre un diagnostic techniquement correct et un diagnostic exploitable. L'opérateur `?` conserve cette chaîne de causes en renvoyant l'erreur.
 
@@ -311,14 +316,15 @@ Cela ne veut pas dire qu'`anyhow` soit un permis d'effacer le sens. Si une fonct
 enum ErrorConfiguracion {
     #[error("el nombre «{0}» está repetido")]
     NombreRepetido(String),
-    #[error("la URL «{0}» no tiene esquema HTTP")]
+    // guarda el nombre del servicio, no la URL: una URL puede llevar una clave
+    #[error("la URL de «{0}» no tiene esquema HTTP")]
     UrlSinEsquema(String),
     #[error("no se pudo leer la configuración")]
     Lectura(#[from] std::io::Error),
 }
 ```
 
-Ce fragment illustre une API de bibliothèque, il ne fait pas partie du revisor actuel. `#[from]` permet de convertir automatiquement un `std::io::Error` en `ErrorConfiguracion`, de sorte que `?` reste utile. Les autres variantes conservent des données que la personne qui appelle peut inspecter au moyen de `match`. Dans une application à une seule couche, convertir ces erreurs en `anyhow::Error` à la fin peut être commode ; dans une bibliothèque, les cacher trop tôt retire des options à qui l'utilise.
+Ce fragment illustre une API de bibliothèque, il ne fait pas partie du revisor actuel. `#[from]` permet de convertir automatiquement un `std::io::Error` en `ErrorConfiguracion`, de sorte que `?` reste utile. Les autres variantes conservent des données que la personne qui appelle peut inspecter au moyen de `match` ; `UrlSinEsquema` garde le nom du service et non l'URL, pour la même raison que tu verras dans `config::cargar` : un message d'erreur ne doit pas répéter quelque chose qui peut contenir un mot de passe. Dans une application à une seule couche, convertir ces erreurs en `anyhow::Error` à la fin peut être commode ; dans une bibliothèque, les cacher trop tôt retire des options à qui l'utilise.
 
 La frontière pratique est celle-ci : `anyhow` pour exécuter une application et expliquer un échec complet ; `thiserror` pour offrir un contrat d'erreurs que d'autres programmes doivent gérer par variante. Tu peux combiner les deux, mais ne les ajoute pas par mode. Commence par le type qui permet à la couche suivante de prendre la bonne décision.
 
@@ -477,7 +483,7 @@ fn cargar(ruta: &str) -> anyhow::Result<Vec<Servicio>> {
 
         anyhow::ensure!(
             url.starts_with("http://") || url.starts_with("https://"),
-            "línea {}: URL sin esquema: {url}",
+            "línea {}: URL sin esquema",
             numero + 1
         );
 
@@ -489,7 +495,7 @@ fn cargar(ruta: &str) -> anyhow::Result<Vec<Servicio>> {
 }
 ```
 
-La solution n'utilise pas `unwrap` parce que chaque échec peut provenir d'un contenu externe. `split_once` renvoie `Option` ; `with_context` le convertit en une erreur explicative. `ensure!` termine la fonction avec `Err` si la condition n'est pas remplie. Le contexte inclut le numéro de ligne ou le chemin pour que la personne qui corrige le fichier n'ait pas à deviner par où commencer.
+La solution n'utilise pas `unwrap` parce que chaque échec peut provenir d'un contenu externe. `split_once` renvoie `Option` ; `with_context` le convertit en une erreur explicative. `ensure!` termine la fonction avec `Err` si la condition n'est pas remplie. Le contexte inclut le numéro de ligne ou le chemin pour que la personne qui corrige le fichier n'ait pas à deviner par où commencer, et le message ne répète pas l'URL : la ligne suffit pour la retrouver, et une URL peut contenir un mot de passe.
 
 ## Comment savoir que j'y suis arrivé
 

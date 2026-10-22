@@ -28,6 +28,9 @@ jobs:
           herramientas/verificar-extractos.sh --probar
           herramientas/verificar-ejemplos.sh --probar
 
+      - name: El medidor de profundidad sabe fallar (control positivo)
+        run: herramientas/autoprueba-medir-profundidad.sh
+
       - name: La profundidad se mide (piso de 3,000 palabras por lección, mediana de 4,000)
         run: herramientas/medir-profundidad.sh
 
@@ -46,13 +49,17 @@ jobs:
       - name: Comprobar que programas/ coincide con las lecciones
         run: herramientas/generar-programas.sh --comprobar
 
+      # --locked: con exactamente las versiones de Cargo.lock. Si Cargo.lock
+      # falta o cargo quisiera cambiarlo, el paso falla en vez de resolver otras
+      # versiones por su cuenta. Lo mismo hacen la clippy de abajo y
+      # verificar-ejemplos.sh, que corre los ejemplos con cargo.
       - name: Pruebas del proyecto real (programas/revisor)
         working-directory: programas/revisor
-        run: cargo test
+        run: cargo test --locked
 
       - name: Clippy del proyecto real, sin un solo aviso
         working-directory: programas/revisor
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --all-targets --locked -- -D warnings
 
       - name: Formato del proyecto real
         working-directory: programas/revisor

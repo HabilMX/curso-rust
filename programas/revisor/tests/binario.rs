@@ -87,6 +87,39 @@ fn un_formato_desconocido_sale_con_dos() {
 }
 
 #[test]
+fn una_url_con_credenciales_se_rechaza_al_cargar_sin_repetirla() {
+    // El puerto 1 no tiene a nadie escuchando: si el revisor llegara a
+    // consultarlo, reportaría «no responde» y saldría con 1, no con 2.
+    let ruta = yaml_temporal(
+        "credenciales",
+        "- nombre: pagos\n  url: http://yo:supersecreto@127.0.0.1:1/estado?token=SECRETO#ancla\n",
+    );
+    for formato in ["tabla", "json"] {
+        let r = revisor(&["-a", &ruta, "-f", formato]);
+        let (out, err) = (texto(&r.stdout), texto(&r.stderr));
+        assert_eq!(
+            r.status.code(),
+            Some(2),
+            "{formato}: stdout: {out} stderr: {err}"
+        );
+        assert!(out.is_empty(), "{formato}: no debe reportar nada: {out}");
+        for pedazo in [
+            "yo:",
+            "supersecreto",
+            "/estado",
+            "token",
+            "SECRETO",
+            "ancla",
+        ] {
+            assert!(
+                !err.contains(pedazo) && !out.contains(pedazo),
+                "{formato}: se repite «{pedazo}»: stdout: {out} stderr: {err}"
+            );
+        }
+    }
+}
+
+#[test]
 fn una_lista_vacia_sale_con_dos() {
     let ruta = yaml_temporal("vacia", "[]\n");
     let r = revisor(&["-a", &ruta]);

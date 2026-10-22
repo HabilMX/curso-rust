@@ -171,7 +171,9 @@ for cap in sorted(glob.glob(os.path.join(raiz, "es", "[0-9][0-9]-*.md"))):
             malos.append(f"{nombre}:{b+1}: el comando documentado debe ser exactamente «{comando}»")
             i = e + 1; continue
         esperado = sin_espacios_finales("\n".join(bloque[1:]))
-        r = subprocess.run(["cargo", "run", "--quiet", "--example", ej], cwd=revisor,
+        # --locked: con las versiones exactas de Cargo.lock; si cargo quisiera
+        # cambiarlo, falla en vez de resolver otras versiones por su cuenta.
+        r = subprocess.run(["cargo", "run", "--quiet", "--locked", "--example", ej], cwd=revisor,
                            capture_output=True, text=True)
         if r.returncode != 0:
             malos.append(f"{nombre}:{marca}: {ej} terminó con código {r.returncode}\n        " + "\n        ".join(r.stderr.splitlines()[:10]))

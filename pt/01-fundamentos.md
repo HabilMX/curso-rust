@@ -263,11 +263,14 @@ O projeto real tem uma função pequena que converte uma configuração textual 
 pub fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
     // with_context agrega a qué archivo se refería el error, como el %w de Go
     let txt = std::fs::read_to_string(ruta).with_context(|| format!("leyendo {ruta}"))?;
-    Ok(yaml_serde::from_str(&txt)?)
+    // el error de yaml_serde repite el valor que no entendió, y ese valor
+    // puede ser una URL con su clave: del error solo se dice dónde ocurrió
+    let servicios = yaml_serde::from_str(&txt).map_err(|e| sin_el_valor(ruta, &e))?;
+    Ok(servicios)
 }
 ```
 
-Você ainda não precisa destrinchar `Result`, `?` nem `yaml_serde`; eles chegam na lição 4. O que você já pode ler é a forma: `ruta` entra como uma visão de texto, a função promete devolver uma lista de serviços ou um erro, `txt` é um valor local imutável e `Ok(...)` é o resultado final. As assinaturas deixam você entender a fronteira de uma função mesmo antes de conhecer todos os seus detalhes internos.
+Você ainda não precisa destrinchar `Result`, `?`, `map_err` nem `yaml_serde`; eles chegam na lição 4. O que você já pode ler é a forma: `ruta` entra como uma visão de texto, a função promete devolver uma lista de serviços ou um erro, `txt` é um valor local imutável e `Ok(...)` é o resultado final. As assinaturas deixam você entender a fronteira de uma função mesmo antes de conhecer todos os seus detalhes internos.
 
 ### Expressões, instruções e o ponto e vírgula
 
@@ -403,12 +406,9 @@ pub fn validar(servicios: &[Servicio]) -> Result<()> {
             "el nombre «{}» está repetido",
             s.nombre
         );
-        anyhow::ensure!(
-            s.url.starts_with("http://") || s.url.starts_with("https://"),
-            "la URL «{}» de «{}» debe empezar con http:// o https://",
-            s.url,
-            s.nombre
-        );
+        if let Some(problema) = problema_de_url(&s.url) {
+            anyhow::bail!("la URL de «{}» {problema}", s.nombre);
+        }
         anyhow::ensure!(
             s.timeout_ms > 0,
             "el tiempo límite de «{}» debe ser mayor que cero",
@@ -419,7 +419,7 @@ pub fn validar(servicios: &[Servicio]) -> Result<()> {
 }
 ```
 
-Aqui `s.timeout_ms > 0` é uma condição booleana como as que você já usou. A diferença é que, em vez de imprimir uma etiqueta, `anyhow::ensure!` interrompe a validação com um erro se a condição for falsa. A lição 4 vai explicar `Result` e esse tipo de tratamento de erros. A lição 2 vai explicar as referências de `&[Servicio]`. Você já consegue ler a intenção sem conhecer cada detalhe: todos os serviços devem ter uma URL com esquema, um nome não repetido e um limite maior que zero.
+Aqui `s.timeout_ms > 0` é uma condição booleana como as que você já usou. A diferença é que, em vez de imprimir uma etiqueta, `anyhow::ensure!` interrompe a validação com um erro se a condição for falsa. A lição 4 vai explicar `Result` e esse tipo de tratamento de erros. A lição 2 vai explicar as referências de `&[Servicio]`. Você já consegue ler a intenção sem conhecer cada detalhe: todos os serviços devem ter um nome não repetido, uma URL que possa ser usada e um limite maior que zero. A URL é verificada por uma função à parte, `problema_de_url`, que você vai ver completa na lição 8; por enquanto basta saber que, se ela encontra um problema, devolve uma frase fixa que o descreve, e `anyhow::bail!` encerra a validação com esse erro, como `ensure!`, mas sem condição. A mensagem nomeia o serviço e nunca repete a URL, porque uma URL pode levar uma senha.
 
 ## O erro que você vai ver
 

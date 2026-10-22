@@ -56,7 +56,7 @@ et seulement ensuite continuer.** Lire d'une traite retient beaucoup moins, mêm
 | 4 | [Collections et erreurs](04-colecciones-errores.md) | chap. 8-9 | `Vec`, `HashMap`, `Result`, `?` |
 | 5 | [Traits, génériques et lifetimes](05-traits-genericos.md) | chap. 10 | le trait `Revisor` et les génériques, et le `'a` qui fait peur |
 | 6 | [Modules, tests et cargo](06-modulos-pruebas.md) | chap. 7, 11, 14 | le vrai projet |
-| 7 | [Concurrence et async](07-concurrencia-async.md) | chap. 16-17 | **qu'il vérifie tout à la fois** |
+| 7 | [Concurrence et async](07-concurrencia-async.md) | chap. 16-17 | **un `revisor` qui vérifie tout en même temps** |
 | 8 | [Le programme terminé](08-el-programa.md) | chap. 12 | `reqwest`, `serde`, `clap`, le binaire |
 
 **La possession (ownership) est à la leçon 2 et ne peut pas être déplacée.** C'est le chapitre 4 de The Book pour une raison : tout le

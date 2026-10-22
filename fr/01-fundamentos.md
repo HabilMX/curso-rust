@@ -263,11 +263,14 @@ Le projet réel a une petite fonction qui convertit une configuration textuelle 
 pub fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
     // with_context agrega a qué archivo se refería el error, como el %w de Go
     let txt = std::fs::read_to_string(ruta).with_context(|| format!("leyendo {ruta}"))?;
-    Ok(yaml_serde::from_str(&txt)?)
+    // el error de yaml_serde repite el valor que no entendió, y ese valor
+    // puede ser una URL con su clave: del error solo se dice dónde ocurrió
+    let servicios = yaml_serde::from_str(&txt).map_err(|e| sin_el_valor(ruta, &e))?;
+    Ok(servicios)
 }
 ```
 
-Tu n'as pas encore besoin de décortiquer `Result`, `?` ni `yaml_serde` ; ils arriveront à la leçon 4. Ce que tu peux déjà lire, c'est la forme : `ruta` entre comme une vue de texte, la fonction promet de renvoyer une liste de services ou une erreur, `txt` est une valeur locale immuable et `Ok(...)` est le résultat final. Les signatures te permettent de comprendre la frontière d'une fonction avant même de connaître tous ses détails internes.
+Tu n'as pas encore besoin de décortiquer `Result`, `?`, `map_err` ni `yaml_serde` ; ils arriveront à la leçon 4. Ce que tu peux déjà lire, c'est la forme : `ruta` entre comme une vue de texte, la fonction promet de renvoyer une liste de services ou une erreur, `txt` est une valeur locale immuable et `Ok(...)` est le résultat final. Les signatures te permettent de comprendre la frontière d'une fonction avant même de connaître tous ses détails internes.
 
 ### Expressions, instructions et le point-virgule
 
@@ -403,12 +406,9 @@ pub fn validar(servicios: &[Servicio]) -> Result<()> {
             "el nombre «{}» está repetido",
             s.nombre
         );
-        anyhow::ensure!(
-            s.url.starts_with("http://") || s.url.starts_with("https://"),
-            "la URL «{}» de «{}» debe empezar con http:// o https://",
-            s.url,
-            s.nombre
-        );
+        if let Some(problema) = problema_de_url(&s.url) {
+            anyhow::bail!("la URL de «{}» {problema}", s.nombre);
+        }
         anyhow::ensure!(
             s.timeout_ms > 0,
             "el tiempo límite de «{}» debe ser mayor que cero",
@@ -419,7 +419,7 @@ pub fn validar(servicios: &[Servicio]) -> Result<()> {
 }
 ```
 
-Ici, `s.timeout_ms > 0` est une condition booléenne comme celles que tu as déjà utilisées. La différence est qu'au lieu d'afficher une étiquette, `anyhow::ensure!` arrête la validation avec une erreur si la condition est fausse. La leçon 4 expliquera `Result` et ce type de gestion d'erreurs. La leçon 2 expliquera les références de `&[Servicio]`. Tu peux déjà lire l'intention sans connaître chaque détail : tous les services doivent avoir une URL avec un schéma, un nom non répété et une limite supérieure à zéro.
+Ici, `s.timeout_ms > 0` est une condition booléenne comme celles que tu as déjà utilisées. La différence est qu'au lieu d'afficher une étiquette, `anyhow::ensure!` arrête la validation avec une erreur si la condition est fausse. La leçon 4 expliquera `Result` et ce type de gestion d'erreurs. La leçon 2 expliquera les références de `&[Servicio]`. Tu peux déjà lire l'intention sans connaître chaque détail : tous les services doivent avoir un nom non répété, une URL utilisable et une limite supérieure à zéro. L'URL est vérifiée par une fonction à part, `problema_de_url`, que tu verras en entier à la leçon 8 ; pour l'instant, il suffit de savoir que, si elle trouve un problème, elle renvoie une phrase fixe qui le décrit, et `anyhow::bail!` termine la validation avec cette erreur, comme `ensure!` mais sans condition. Le message nomme le service et ne répète jamais l'URL, parce qu'une URL peut contenir un mot de passe.
 
 ## L'erreur que tu vas voir
 

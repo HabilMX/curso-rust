@@ -263,11 +263,14 @@ The real project has a small function that converts a textual configuration into
 pub fn cargar(ruta: &str) -> Result<Vec<Servicio>> {
     // with_context agrega a qué archivo se refería el error, como el %w de Go
     let txt = std::fs::read_to_string(ruta).with_context(|| format!("leyendo {ruta}"))?;
-    Ok(yaml_serde::from_str(&txt)?)
+    // el error de yaml_serde repite el valor que no entendió, y ese valor
+    // puede ser una URL con su clave: del error solo se dice dónde ocurrió
+    let servicios = yaml_serde::from_str(&txt).map_err(|e| sin_el_valor(ruta, &e))?;
+    Ok(servicios)
 }
 ```
 
-You don't need to take apart `Result`, `?`, or `yaml_serde` yet; they will arrive in lesson 4. What you can already read is the shape: `ruta` comes in as a view of text, the function promises to return a list of services or an error, `txt` is an immutable local value, and `Ok(...)` is the final result. Signatures let you understand a function's boundary even before knowing all of its internal details.
+You don't need to take apart `Result`, `?`, `map_err`, or `yaml_serde` yet; they will arrive in lesson 4. What you can already read is the shape: `ruta` comes in as a view of text, the function promises to return a list of services or an error, `txt` is an immutable local value, and `Ok(...)` is the final result. Signatures let you understand a function's boundary even before knowing all of its internal details.
 
 ### Expressions, statements, and the semicolon
 
@@ -403,12 +406,9 @@ pub fn validar(servicios: &[Servicio]) -> Result<()> {
             "el nombre «{}» está repetido",
             s.nombre
         );
-        anyhow::ensure!(
-            s.url.starts_with("http://") || s.url.starts_with("https://"),
-            "la URL «{}» de «{}» debe empezar con http:// o https://",
-            s.url,
-            s.nombre
-        );
+        if let Some(problema) = problema_de_url(&s.url) {
+            anyhow::bail!("la URL de «{}» {problema}", s.nombre);
+        }
         anyhow::ensure!(
             s.timeout_ms > 0,
             "el tiempo límite de «{}» debe ser mayor que cero",
@@ -419,7 +419,7 @@ pub fn validar(servicios: &[Servicio]) -> Result<()> {
 }
 ```
 
-Here `s.timeout_ms > 0` is a boolean condition like the ones you have already used. The difference is that, instead of printing a label, `anyhow::ensure!` stops the validation with an error if the condition is false. Lesson 4 will explain `Result` and this kind of error handling. Lesson 2 will explain the references in `&[Servicio]`. You can already read the intent without knowing every detail: all services must have a URL with a scheme, a name that is not repeated, and a limit greater than zero.
+Here `s.timeout_ms > 0` is a boolean condition like the ones you have already used. The difference is that, instead of printing a label, `anyhow::ensure!` stops the validation with an error if the condition is false. Lesson 4 will explain `Result` and this kind of error handling. Lesson 2 will explain the references in `&[Servicio]`. You can already read the intent without knowing every detail: all services must have a name that is not repeated, a URL that can be used, and a limit greater than zero. The URL is checked by a separate function, `problema_de_url`, which you will see in full in lesson 8; for now it is enough to know that, if it finds a problem, it returns a fixed phrase describing it, and `anyhow::bail!` ends the validation with that error, like `ensure!` but without a condition. The message names the service and never repeats the URL, because a URL can carry a password.
 
 ## The error you will see
 
