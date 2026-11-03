@@ -1,6 +1,6 @@
 # The Rust Course — the Second One, After Go
 
-**By Dorian Chávez, founder of Hábil and integration architect.**
+**By Dorian Chávez, co-founder of Hábil and integration architect.**
 
 **Who it is for:** someone who has already finished the **[Go course](https://github.com/HabilMX/curso-go)** and wants to understand the other
 end of the spectrum. You don't learn Rust *instead of* Go: you learn it **after**, and that way you understand
